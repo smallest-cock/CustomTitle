@@ -134,14 +134,17 @@ void TitlesComponent::hookFunctions()
 
 	hookEventPost(Events::GFxData_StartMenu_TA_ProgressToMainMenu, [this](...) { applySelectedAppearanceToUser(); });
 
-	hookWithCallerPost(Events::GFxHUD_TA_HandleTeamChanged, [this](ActorWrapper Caller, ...)
-		{
-			auto caller = reinterpret_cast<AGFxHUD_TA*>(Caller.memory_address);
-			if (!caller)
-				return;
-			
-			refreshPriTitlePresets(caller);
-		});
+	auto refreshPriTitlePresetsUsingHud = [this](ActorWrapper Caller, void* params, std::string eventName)
+	{
+		auto caller = reinterpret_cast<AGFxHUD_TA*>(Caller.memory_address);
+		if (!caller)
+			return;
+
+		refreshPriTitlePresets(caller);
+	};
+	hookWithCallerPost(Events::GFxHUD_TA_HandleTeamChanged, refreshPriTitlePresetsUsingHud);
+
+	hookEventPost(Events::GFxData_PRI_TA_SetPlayerTitle, [this](...) { refreshPriTitlePresets(); });
 
 	hookEventPost(Events::EngineShare_X_EventPreLoadMap, [this](...){ m_ingameCustomPresets.clear(); });
 

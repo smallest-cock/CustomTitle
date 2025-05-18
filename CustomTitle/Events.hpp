@@ -3,6 +3,8 @@
 
 namespace Events
 {
+	constexpr const char* GFxData_PRI_TA_SetPlayerTitle =				"Function TAGame.GFxData_PRI_TA.SetPlayerTitle";
+    constexpr const char* GFxHUD_TA_OpenScoreboard =					"Function TAGame.GFxHUD_TA.OpenScoreboard";
 	constexpr const char* PlayerTitleConfig_X_GetTitleData =			"Function ProjectX.PlayerTitleConfig_X.GetTitleData";
 	constexpr const char* GFxData_PlayerTitles_TA_GetTitleData =		"Function TAGame.GFxData_PlayerTitles_TA.GetTitleData";
 	constexpr const char* GFxData_PlayerTitles_TA_UpdateSelectedTitle =	"Function TAGame.GFxData_PlayerTitles_TA.UpdateSelectedTitle";
