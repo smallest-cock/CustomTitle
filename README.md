@@ -1,7 +1,7 @@
 # Custom Title (BakkesMod plugin)
 Enables client-side title customization (and more) in Rocket League
 
-<img src="./assets/images/cover_pic.png" alt="Plugin Overview" width="600"/>
+<img src="./assets/images/c++_100x100.png"/>
 
 ## ✨ Features
 - Edit title text, color, & glow color
