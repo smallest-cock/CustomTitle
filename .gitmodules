@@ -1,0 +1,20 @@
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+	shallow = true
+[submodule "external/BMSDK"]
+	path = external/BMSDK
+	url = https://github.com/bakkesmodorg/BakkesModSDK.git
+	branch = master
+[submodule "external/BakkesmodPluginTemplate"]
+	path = external/BakkesmodPluginTemplate
+	url = https://github.com/Martinii89/BakkesmodPluginTemplate.git
+	branch = master
+[submodule "external/RLSDK"]
+	path = external/RLSDK
+	url = https://github.com/smallest-cock/RLSDK.git
+	branch = main
+[submodule "external/ModUtils"]
+	path = external/ModUtils
+	url = https://github.com/smallest-cock/ModUtils.git
+	branch = main
