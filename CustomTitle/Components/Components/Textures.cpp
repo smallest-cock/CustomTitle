@@ -307,6 +307,31 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const Microsof
 	Dx11Data::pd3dDeviceContext->CopyResource(targetDxTex, newTex);
 }
 
+
+bool InitializeScratchImageFromImage(const DirectX::Image& srcImage, DirectX::ScratchImage& scratch)
+{
+	HRESULT hr = scratch.Initialize2D(srcImage.format, srcImage.width, srcImage.height,
+	                                  1, // array size
+	                                  1  // mip levels
+	);
+
+	if (FAILED(hr))
+	{
+		LOG("ERROR: Failed to initialize DirectX::ScratchImage using Initialize2D");
+		return false;
+	}
+
+	// Copy pixel data from source image to scratch image
+	const DirectX::Image* destImage = scratch.GetImage(0, 0, 0);
+	if (destImage && destImage->pixels && srcImage.pixels)
+	{
+		memcpy(destImage->pixels, srcImage.pixels, srcImage.rowPitch * srcImage.height);
+		return true;
+	}
+
+	return false;
+}
+
 void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path& path)
 {
 	if (!target || target->ObjectFlags & RF_BadObjectFlags)
@@ -349,6 +374,9 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	customImageSource.slicePitch     = customImageSource.rowPitch * customImg.height;
 
 	DirectX::ScratchImage processedImage; // <-- what will become the image to replace original, using CopyResource
+	if (!InitializeScratchImageFromImage(customImageSource, processedImage))
+		return;
+
 	HRESULT hr;
 
 
@@ -388,8 +416,15 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	if (processedImgData.width % 4 != 0 || processedImgData.height % 4 != 0)
 		LOG("WARNING: Custom image dimensions are not multiples of 4. BC compression might be fricked");
 
+	const DirectX::Image* processedImg = processedImage.GetImage(0, 0, 0);
+	if (!processedImg)
+	{
+		LOG("ERROR: DirectX::Image* from processedImage.GetImage(0, 0, 0) is null");
+		return;
+	}
+
 	DirectX::ScratchImage compressedImage;
-	hr = DirectX::Compress(*processedImage.GetImage(0, 0, 0), originalFormat, DirectX::TEX_COMPRESS_DEFAULT,
+	hr = DirectX::Compress(*processedImg, originalFormat, DirectX::TEX_COMPRESS_DEFAULT,
 	                       DirectX::TEX_THRESHOLD_DEFAULT, compressedImage);
 	if (FAILED(hr))
 	{
