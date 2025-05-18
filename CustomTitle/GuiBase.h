@@ -15,7 +15,7 @@ public:
 	virtual ~PluginWindowBase() = default;
 
 	bool isWindowOpen_ = false;
-	std::string menuTitle_ = "CustomTitle";
+	std::string menuTitle_ = "Custom Title";
 
 	std::string GetMenuName() override;
 	std::string GetMenuTitle() override;
