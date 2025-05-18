@@ -1,0 +1,13 @@
+# .clang-format file for your project
+BasedOnStyle: LLVM
+IndentWidth: 4            # Indentation looks like 4 spaces wide
+TabWidth: 4               # Tabs will be displayed as 4 spaces wide
+UseTab: ForIndentation    # Use tabs for indentation, spaces for alignment
+BreakBeforeBraces: Allman # Allman style braces (brace on a new line)
+ColumnLimit: 120          # Optional: keep lines within 120 characters (you can adjust this)
+PointerAlignment: Left    # Keep pointer alignment on the left (you can tweak if you want)
+AlignConsecutiveAssignments: true  # Optional: align consecutive assignments
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortBlocksOnASingleLine: true
+BraceWrapping:
+  AfterControlStatement: false

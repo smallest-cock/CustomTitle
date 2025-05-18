@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{eb001cc9-23ca-4ff9-8ab7-db1a56d35851}</ProjectGuid>
+    <RootNamespace>CustomTitle</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="BakkesMod.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="BakkesMod.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)plugins\</OutDir>
+    <IntDir>$(SolutionDir)build\.intermediates\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)plugins\</OutDir>
+    <IntDir>$(SolutionDir)build\.intermediates\$(Configuration)\</IntDir>
+    <ExternalIncludePath>$(SolutionDir)external;$(SolutionDir)vcpkg_installed\x64-windows-static\x64-windows-static\include</ExternalIncludePath>
+    <TargetName>CustomTitle</TargetName>
+    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)external\BMSDK\include</AdditionalIncludeDirectories>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\BMSDK\lib;$(SolutionDir)vcpkg_installed\x64-windows-static\x64-windows-static\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTex.lib;minhook.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/Brepro %(AdditionalOptions)</AdditionalOptions>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <PreBuildEvent>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File update_version.ps1 "./version.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imguivariouscontrols.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_additions.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_demo.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_draw.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_rangeslider.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_searchablecombo.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_stdlib.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_timeline.cpp" />
+    <ClCompile Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_widgets.cpp" />
+    <ClCompile Include="..\external\kiero\kiero.cpp" />
+    <ClCompile Include="..\external\ModUtils\gui\GuiTools.cpp" />
+    <ClCompile Include="..\external\ModUtils\util\Utils.cpp" />
+    <ClCompile Include="..\external\ModUtils\wrappers\GFxWrapper.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\GameDefines.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\AkAudio_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Core_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Engine_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Extras.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\GFxUI_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\IpDrv_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\OnlineSubsystemEOS_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\ProjectX_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\TAGame_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\WinDrv_classes.cpp" />
+    <ClCompile Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\XAudio2_classes.cpp" />
+    <ClCompile Include="Commands.cpp" />
+    <ClCompile Include="Components\Components\Instances.cpp" />
+    <ClCompile Include="Components\Components\Items.cpp" />
+    <ClCompile Include="Components\Components\Textures.cpp" />
+    <ClCompile Include="Components\Components\Titles.cpp" />
+    <ClCompile Include="Events.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="CustomTitle.cpp" />
+    <ClCompile Include="GuiBase.cpp" />
+    <ClCompile Include="RegisterCvars.cpp" />
+    <ClCompile Include="Settings.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imconfig.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imguivariouscontrols.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_additions.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_impl_dx11.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_impl_win32.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_internal.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_rangeslider.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_searchablecombo.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_stdlib.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imgui_timeline.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imstb_rectpack.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imstb_textedit.h" />
+    <ClInclude Include="..\external\BakkesmodPluginTemplate\IMGUI\imstb_truetype.h" />
+    <ClInclude Include="..\external\kiero\kiero.h" />
+    <ClInclude Include="..\external\ModUtils\gui\GuiTools.hpp" />
+    <ClInclude Include="..\external\ModUtils\includes.hpp" />
+    <ClInclude Include="..\external\ModUtils\util\Utils.hpp" />
+    <ClInclude Include="..\external\ModUtils\wrappers\GFxWrapper.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\GameDefines.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SdkHeaders.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\AkAudio_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\AkAudio_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\AkAudio_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Core_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Core_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Core_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Engine_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Engine_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Engine_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\Extras.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\GFxUI_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\GFxUI_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\GFxUI_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\IpDrv_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\IpDrv_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\IpDrv_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\OnlineSubsystemEOS_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\OnlineSubsystemEOS_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\OnlineSubsystemEOS_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\ProjectX_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\ProjectX_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\ProjectX_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\TAGame_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\TAGame_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\TAGame_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\WinDrv_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\WinDrv_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\WinDrv_structs.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\XAudio2_classes.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\XAudio2_parameters.hpp" />
+    <ClInclude Include="..\external\RLSDK\RLSDK_w_pch_includes\SDK_HEADERS\XAudio2_structs.hpp" />
+    <ClInclude Include="Components\Components\Component.hpp" />
+    <ClInclude Include="Components\Components\Instances.hpp" />
+    <ClInclude Include="Components\Components\Items.hpp" />
+    <ClInclude Include="Components\Components\Textures.hpp" />
+    <ClInclude Include="Components\Components\Titles.hpp" />
+    <ClInclude Include="Components\Includes.hpp" />
+    <ClInclude Include="Cvars.hpp" />
+    <ClInclude Include="Events.hpp" />
+    <ClInclude Include="logging.h" />
+    <ClInclude Include="Macros.hpp" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="GuiBase.h" />
+    <ClInclude Include="CustomTitle.h" />
+    <ClInclude Include="version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CustomTitle.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,69 @@
+name: 🧱 Build DLL (Windows)
+
+on:
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: windows-latest
+
+        steps:
+            - name: 📥 Checkout repository (with submodules)
+              uses: actions/checkout@v4
+              with:
+                  submodules: false
+
+            - name: 🍆 Initialize submodules
+              run: init-submodules.bat
+              shell: cmd
+
+            - name: 🗄️ Cache vcpkg dependencies
+              id: cache-vcpkg
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ${{ github.workspace }}\vcpkg_installed
+                  key: vcpkg-${{ hashFiles('**/vcpkg.json') }}-${{ runner.os }}
+
+            - name: 📥 Clone vcpkg (if not cached)
+              if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+              run: |
+                  git clone https://github.com/microsoft/vcpkg.git "${{ github.workspace }}\vcpkg"
+                  cd vcpkg
+                  git submodule update --init --recursive
+              shell: bash
+
+            - name: 🛠️ Manual vcpkg setup (if not cached)
+              if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+              run: |
+                  cd vcpkg
+                  ./bootstrap-vcpkg.bat
+                  ./vcpkg integrate install
+              shell: bash
+
+            - name: 🛠️ Set up MSBuild
+              uses: microsoft/setup-msbuild@v2
+
+            - name: 🔨 Build solution
+              run: msbuild CustomTitle.sln /p:Configuration=Release /p:Platform=x64 /p:VcpkgEnabled=true /p:VcpkgRoot=${{ github.workspace }}\vcpkg
+
+            - name: 📦 Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dll-and-pdb
+                  path: |
+                      ${{ github.workspace }}\plugins\*.dll
+                      ${{ github.workspace }}\plugins\*.pdb
+
+            - name: 💼 Prepare installation files
+              run: |
+                  mkdir installation_zip
+                  copy "${{ github.workspace }}\plugins\*.dll" installation_zip\
+                  copy "${{ github.workspace }}\install.bat" installation_zip\
+              shell: cmd
+
+            - name: 📦 Upload installation package
+              uses: actions/upload-artifact@v4
+              with:
+                  name: CustomTitle
+                  path: installation_zip\*
