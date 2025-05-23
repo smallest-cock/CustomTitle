@@ -21,7 +21,9 @@ void CustomTitle::onLoad()
 	auto showOtherPlayerTitles_cvar =		RegisterCvar_Bool(Cvars::showOtherPlayerTitles,		true);
 	auto showTitleToOthers_cvar =			RegisterCvar_Bool(Cvars::showTitleToOthers,			true);
 	auto filterOtherPlayerTitles_cvar =		RegisterCvar_Bool(Cvars::filterOtherPlayerTitles,	false);
+	auto applyOthersTitleNotif_cvar =		RegisterCvar_Bool(Cvars::applyOthersTitleNotif,		false);
 	
+	applyOthersTitleNotif_cvar.bindTo(m_notifyWhenApplyingOthersTitle);
 
 	// ================================== COMMANDS ======================================
 	RegisterCommand(Commands::spawnCustomTitle,		std::bind(&CustomTitle::cmd_spawnCustomTitle, this, std::placeholders::_1));
@@ -67,19 +69,21 @@ bool CustomTitle::handleIncomingChatMessage(const FChatMessage& message, AHUDBas
 	// TODO: maybe perhaps possibly eventually make into an enum?
 	if (prefix == "title")
 	{
-		Titles.applyPresetFromChatData(content, message, caller);
+		Titles.applyPresetFromChatData(content, message, caller, *m_notifyWhenApplyingOthersTitle);
 		return true;
 	}
-	else if (prefix == "name")
-	{
-		// Handle a "name" message type
-	}
+	//else if (prefix == "name")
+	//{
+	//	// Handle a "name" message type
+	//}
 
 	return false; // Unrecognized prefix
 }
 
 void CustomTitle::pluginInit()
 {
+	m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
+
 	Format::construct_label({41, 11, 20, 6, 8, 13, 52, 12, 0, 3, 4, 52, 1, 24, 52, 44, 44, 37, 14, 22}, h_label);	// o b f u s a c i o n
 	Dx11Data::InitializeKiero();
 	Dx11Data::HookPresent();

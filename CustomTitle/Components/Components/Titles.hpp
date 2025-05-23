@@ -148,16 +148,12 @@ public:
 	{
 		constexpr const char* prefix = "title:";
 
-		std::ostringstream ss;
-
-		ss << prefix << m_text << '|' << ColorToHex(m_textColor) << '|';
-
-		if (m_sameTextAndGlowColor)
-			ss << '-'; // placeholder meaning "same as textColor"
-		else
-			ss << ColorToHex(m_glowColor);
-
-		return ss.str();
+		return std::format("{}{}|{}|{}",
+			prefix,
+			m_text,
+			ColorToHex(m_textColor),
+			m_sameTextAndGlowColor ? "-" : ColorToHex(m_glowColor)
+		);
 	}
 
 
@@ -261,7 +257,7 @@ private:
 public:
 	void spawnSelectedPreset(bool log = false);
 	void applySelectedAppearanceToUser();
-	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller);
+	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller, bool notify);
 
 public:
 	// gui

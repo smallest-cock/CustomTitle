@@ -323,7 +323,7 @@ void TitlesComponent::applySelectedAppearanceToUser()
 	applyPresetToPri(pri, *title);
 }
 
-void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller)
+void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller, bool notify)
 {
 #define DONT_APPLY_TO_USER
 
@@ -366,7 +366,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 		CurlRequest req;
 		req.url = "https://www.purgomalum.com/service/plain?text=" + Format::EscapeForHTMLIncludingSpaces(appearance.getText());
 
-		auto responseCallback = [this, gfxPri, appearance, senderName, hud](int code, std::string result)
+		auto responseCallback = [this, gfxPri, appearance, senderName, hud, notify](int code, std::string result)
 			{
 				if (code != 200)
 				{
@@ -388,9 +388,10 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 					refreshPriTitlePresets(hud);
 					//applyPresetToPri(gfxPri, title);
 
-					Instances.SpawnNotification("custom title", "Applied title appearance for " + senderName, 3, true);
+					if (notify)
+						Instances.SpawnNotification("custom title", "Applied title appearance for " + senderName, 3, true);
 
-				, gfxPri, oldText, title, senderName, hud);
+				, gfxPri, oldText, title, senderName, hud, notify);
 			};
 
 		HttpWrapper::SendCurlRequest(req, responseCallback);
@@ -403,7 +404,8 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 		refreshPriTitlePresets(hud);
 		//applyPresetToPri(gfxPri, appearance);
 
-		Instances.SpawnNotification("custom title", "Applied title appearance for " + senderName, 3, true);
+		if (notify)
+			Instances.SpawnNotification("custom title", "Applied title appearance for " + senderName, 3, true);
 	}
 }
 

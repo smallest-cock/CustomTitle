@@ -18,6 +18,7 @@ namespace Cvars
 	constexpr CvarData showOtherPlayerTitles =		CVAR("show_other_player_titles",		"show other players' custom titles");
 	constexpr CvarData showTitleToOthers =			CVAR("show_title_to_others",			"show current title to other players with the same mod");
 	constexpr CvarData filterOtherPlayerTitles =	CVAR("filter_other_player_titles",		"use word filter on other players' custom titles");
+	constexpr CvarData applyOthersTitleNotif =		CVAR("apply_others_title_notification",	"show notification when applying another player's title");
 
 	// strings
 

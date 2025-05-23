@@ -70,30 +70,27 @@ void CustomTitle::Settings_Tab()
 	auto showTitleToOthers_cvar =			GetCvar(Cvars::showTitleToOthers);
 	auto showOtherPlayerTitles_cvar =		GetCvar(Cvars::showOtherPlayerTitles);
 	auto filterOtherPlayerTitles_cvar =		GetCvar(Cvars::filterOtherPlayerTitles);
+	auto applyOthersTitleNotif_cvar =		GetCvar(Cvars::applyOthersTitleNotif);
 	if (!showTitleToOthers_cvar)
 		return;
 
 	bool showTitleToOthers = showTitleToOthers_cvar.getBoolValue();
 	if (ImGui::Checkbox("Make my title visible to other players with the mod", &showTitleToOthers))
-	{
 		showTitleToOthers_cvar.setValue(showTitleToOthers);
-	}
 
 	bool showOtherPlayerTitles = showOtherPlayerTitles_cvar.getBoolValue();
 	if (ImGui::Checkbox("Show titles of other players with the mod", &showOtherPlayerTitles))
-	{
 		showOtherPlayerTitles_cvar.setValue(showOtherPlayerTitles);
-	}
 
 	bool filterOtherPlayerTitles = filterOtherPlayerTitles_cvar.getBoolValue();
 	if (ImGui::Checkbox("Censor other players' custom titles", &filterOtherPlayerTitles))
-	{
 		filterOtherPlayerTitles_cvar.setValue(filterOtherPlayerTitles);
-	}
 	if (ImGui::IsItemHovered())
-	{
 		ImGui::SetTooltip("Word filtering isn't foolproof. Some stuff might slip through...");
-	}
+
+	bool applyOthersTitleNotif = applyOthersTitleNotif_cvar.getBoolValue();
+	if (ImGui::Checkbox("Show notification when applying other players' titles", &applyOthersTitleNotif))
+		applyOthersTitleNotif_cvar.setValue(applyOthersTitleNotif);
 }
 
 void CustomTitle::TitlePresets_Tab()
