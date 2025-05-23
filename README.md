@@ -1,6 +1,8 @@
 # Custom Title (BakkesMod plugin)
 Enables client-side title customization (and more) in Rocket League
 
+🎥 Video showcase: https://youtu.be/qGLaQm3ruLg
+
 <img src="./assets/images/screenshots/spawn_ss.png" width="80%"/>
 <img src="./assets/images/screenshots/menu_ss.png" width="40%"/>
 <img src="./assets/images/screenshots/in_game_ss.png" width="40%"/>
@@ -16,7 +18,7 @@ Enables client-side title customization (and more) in Rocket League
 - Censor the titles of other players with the mod (optional)
 
 ## 🔧 Installation
-Download the latest release from the [Releases page](https://github.com/smallest-cock/CustomTitle/releases).
+Download the latest release from the [Releases page](https://github.com/smallest-cock/CustomTitle/releases/latest).
 
 ## 💻 Console Commands
 You can use the following commands in the BakkesMod console (`F6`) or bind them to keys:
