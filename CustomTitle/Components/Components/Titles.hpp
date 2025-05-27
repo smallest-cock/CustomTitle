@@ -4,6 +4,28 @@
 
 
 
+// returns a AARRGGBB packed 32-bit int
+inline uint32_t PackColor(const FColor& col)
+{
+	return
+		(static_cast<uint32_t>(col.A) << 24) |
+		(static_cast<uint32_t>(col.R) << 16) |
+	    (static_cast<uint32_t>(col.G) << 8)  |
+		static_cast<uint32_t>(col.B);
+}
+
+// expects a AARRGGBB packed 32-bit int
+inline FColor UnpackColor(uint32_t packed)
+{
+	return {
+	    static_cast<uint8_t>(packed & 0xFF),         // B
+	    static_cast<uint8_t>((packed >> 8) & 0xFF),  // G
+	    static_cast<uint8_t>((packed >> 16) & 0xFF), // R
+	    static_cast<uint8_t>((packed >> 24) & 0xFF)  // A
+	};
+}
+
+
 //class TitleAppearance // i wan make class but too lazy switch to using getters/setters in TitlesComponent class
 struct TitleAppearance
 {
@@ -104,7 +126,7 @@ public:
 		m_textColor.A = newCol[3] * 255;
 	}
 
-	void setGlowColor(const FColor& newCol) { m_textColor = newCol; }
+	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
 
 	void setGlowColor(const float(&newCol)[4])
 	{
@@ -118,30 +140,38 @@ public:
 
 
 	// static functions (TODO: move to ModUtils)
+
+	// FColor --> AARRGGBB hex string
 	static std::string ColorToHex(const FColor& col)
-	{
+	{	
+		uint32_t packedInt = PackColor(col);
 		std::ostringstream ss;
-		ss << std::hex << std::uppercase << std::setfill('0')
-			<< std::setw(2) << static_cast<int>(col.R)
-			<< std::setw(2) << static_cast<int>(col.G)
-			<< std::setw(2) << static_cast<int>(col.B)
-			<< std::setw(2) << static_cast<int>(col.A);
+		ss << std::hex << std::uppercase << std::setfill('0') << std::setw(8) << packedInt;
 		return ss.str();
 	}
 
+	// AARRGGBB hex string --> FColor
 	static FColor HexToColor(const std::string& hex)
 	{
 		if (hex.size() != 8)
-			return { 255, 255, 255, 255 }; // fallback to white
+		{
+			LOG("ERROR: Color hex string \"{}\" isn't 8 characters. Falling back to white...");
+			return {255, 255, 255, 255}; // fallback to white
+		}
 
-		FColor col;
-		col.R = static_cast<uint8_t>(std::stoi(hex.substr(0, 2), nullptr, 16));
-		col.G = static_cast<uint8_t>(std::stoi(hex.substr(2, 2), nullptr, 16));
-		col.B = static_cast<uint8_t>(std::stoi(hex.substr(4, 2), nullptr, 16));
-		col.A = static_cast<uint8_t>(std::stoi(hex.substr(6, 2), nullptr, 16));
-		return col;
+		uint32_t packed = static_cast<uint32_t>(std::stoul(hex, nullptr, 16));
+		return UnpackColor(packed);
 	}
 
+	std::string getDebugTextColorStr() const
+	{
+		return std::format("R:{}-G:{}-B:{}-A:{}", m_textColor.R, m_textColor.G, m_textColor.B, m_textColor.A);
+	}
+
+	std::string getDebugGlowColorStr() const
+	{
+		return std::format("R:{}-G:{}-B:{}-A:{}", m_glowColor.R, m_glowColor.G, m_glowColor.B, m_glowColor.A);
+	}
 
 	// Will output "title:My custom text|FF8040FF|00FF00FF" ... or "title:My custom text|FF8040FF|-" if m_sameTextAndGlowColor is true
 	std::string toEncodedString() const
@@ -231,8 +261,6 @@ private:
 	void refreshPriTitlePresets(AGFxHUD_TA* hud = nullptr);
 	void updateGameTitleAppearances(UPlayerTitleConfig_X* config = nullptr, bool forceSearch = false);
 
-	TitleAppearance* getActivePreset();
-
 	FName getCustomTitleId();
 
 	bool spawn(const std::string& spawn_id, bool animation = true, const std::string& spawn_msg = "");
@@ -255,9 +283,15 @@ private:
     static void sendTitleDataChat(const TitleAppearance& appearance, APlayerController* pc = nullptr);
 
 public:
+	TitleAppearance* getActivePreset();
+
 	void spawnSelectedPreset(bool log = false);
 	void applySelectedAppearanceToUser();
 	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller, bool notify);
+
+	// testing
+	bool test1();
+	bool test2();
 
 public:
 	// gui

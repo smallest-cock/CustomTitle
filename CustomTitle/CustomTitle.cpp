@@ -85,6 +85,8 @@ void CustomTitle::pluginInit()
 	m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
 
 	Format::construct_label({41, 11, 20, 6, 8, 13, 52, 12, 0, 3, 4, 52, 1, 24, 52, 44, 44, 37, 14, 22}, h_label);	// o b f u s a c i o n
+	PluginUpdates::check_for_updates(stringify_(CustomTitle), short_plugin_version);
+
 	Dx11Data::InitializeKiero();
 	Dx11Data::HookPresent();
 

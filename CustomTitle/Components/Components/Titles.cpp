@@ -3,27 +3,6 @@
 #include "CustomTitle.h"
 
 
-std::string removeSuffix(const std::string& input)
-{
-	// Find the last underscore in the string
-	size_t pos = input.find_last_of('_');
-
-	// Check if the character after the underscore is a single digit
-	if (pos != std::string::npos && pos < input.size() - 1) {
-		char suffix = input[pos + 1];
-
-		// Check if the suffix is a single digit and no additional characters exist
-		if (std::isdigit(suffix) && (pos + 2 == input.size())) {
-			// Return the substring before the underscore
-			return input.substr(0, pos);
-		}
-	}
-
-	// If no underscore or the condition is not met, return the original string
-	return input;
-}
-
-
 
 // ##############################################################################################################
 // ################################################    INIT    ##################################################
@@ -775,6 +754,12 @@ bool TitlesComponent::decodeAppearance(const std::string& inStr, TitleAppearance
 	if (parts.size() < 3)  // invalid format, ignore
 		return false;
 
+/*
+	LOG("parts[0]: \"{}\"", parts[0]);
+	LOG("parts[1]: \"{}\"", parts[1]);
+	LOG("parts[2]: \"{}\"", parts[2]);
+*/
+
 	outAppearance.setText(parts[0]);
 	outAppearance.setTextColor(TitleAppearance::HexToColor(parts[1]));
 
@@ -1066,6 +1051,37 @@ void TitlesComponent::display_gameTitlesDropdown()
 
 		ImGui::EndCombo();
 	}
+}
+
+
+
+// ##############################################################################################################
+// #############################################    TESTING    ##################################################
+// ##############################################################################################################
+
+bool TitlesComponent::test1()
+{
+	TitleAppearance* title = getActivePreset();
+	if (!title)
+		return false;
+
+	TitleAppearance& preset = *title;
+
+	LOG("============ BEFORE CHAT ==========");
+
+	LOG("Active preset text color: {}", preset.getDebugTextColorStr());
+	LOG("Active preset glow color: {}", preset.getDebugGlowColorStr());
+
+	// send encoded chat
+	sendTitleDataChat(preset);
+
+
+	return true;
+}
+
+bool TitlesComponent::test2()
+{
+	return true;
 }
 
 

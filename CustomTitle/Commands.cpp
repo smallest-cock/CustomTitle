@@ -26,12 +26,7 @@ void CustomTitle::cmd_spawnItem(std::vector<std::string> args)
 
 void CustomTitle::cmd_test(std::vector<std::string> args)
 {
-	auto titles = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
-	if (!titles)
-		return;
-
-	titles->UpdatePlayerTitles();
-	LOG("Called UpdatePlayerTitles...");
+	Titles.test1();
 
 	LOG("did test 1");
 }
