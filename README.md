@@ -14,8 +14,9 @@ Enables client-side title customization (and more) in Rocket League
 - Apply the appearance of any existing RL title
 - Spawn your custom title
   - Can also spawn any item based on its product ID
-- Display your custom title to other players with the mod (optional)
-- Censor the titles of other players with the mod (optional)
+- Make your custom title visible to other players with the mod (optional)
+  - Requires both players to have chat enabled
+- Censor the custom titles of other players with the mod (optional)
 
 ## 🔧 Installation
 Download the latest release from the [Releases page](https://github.com/smallest-cock/CustomTitle/releases/latest).
