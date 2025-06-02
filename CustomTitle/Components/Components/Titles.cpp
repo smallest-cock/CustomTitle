@@ -304,7 +304,7 @@ void TitlesComponent::applySelectedAppearanceToUser()
 
 void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller, bool notify)
 {
-#define DONT_APPLY_TO_USER
+//#define DONT_APPLY_TO_USER
 
 	if (!caller || !caller->IsA<AGFxHUD_TA>())
 		return;
@@ -338,6 +338,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 	}
 
 	std::string senderName = msg.PlayerName.ToString();
+	std::string successMsg = "Applied title appearance for " + senderName;
 
 	auto filterOtherPlayerTitles_cvar = getCvar(Cvars::filterOtherPlayerTitles);
 	if (filterOtherPlayerTitles_cvar.getBoolValue())
@@ -345,7 +346,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 		CurlRequest req;
 		req.url = "https://www.purgomalum.com/service/plain?text=" + Format::EscapeForHTMLIncludingSpaces(appearance.getText());
 
-		auto responseCallback = [this, gfxPri, appearance, senderName, hud, notify](int code, std::string result)
+		auto responseCallback = [this, gfxPri, appearance, senderName, successMsg, hud, notify](int code, std::string result)
 			{
 				if (code != 200)
 				{
@@ -367,10 +368,11 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 					refreshPriTitlePresets(hud);
 					//applyPresetToPri(gfxPri, title);
 
+					LOG(successMsg);
 					if (notify)
-						Instances.SpawnNotification("custom title", "Applied title appearance for " + senderName, 3, true);
+						Instances.SpawnNotification("custom title", successMsg, 3, true);
 
-				, gfxPri, oldText, title, senderName, hud, notify);
+				, gfxPri, oldText, title, senderName, successMsg, hud, notify);
 			};
 
 		HttpWrapper::SendCurlRequest(req, responseCallback);
@@ -383,8 +385,9 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 		refreshPriTitlePresets(hud);
 		//applyPresetToPri(gfxPri, appearance);
 
+		LOG(successMsg);
 		if (notify)
-			Instances.SpawnNotification("custom title", "Applied title appearance for " + senderName, 3, true);
+			Instances.SpawnNotification("custom title", successMsg, 3, true);
 	}
 }
 
@@ -654,9 +657,14 @@ UGFxData_PRI_TA* TitlesComponent::getUserGFxPRI()
 
 UGFxData_PRI_TA* TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo* priBase, AHUDBase_TA* hudBase)
 {
-	if (!priBase || !hudBase)
+	if (!priBase)
+	{
+		LOG("ERROR: APlayerReplicationInfo* from chat data is null");
 		return nullptr;
-
+	}
+	if (!hudBase)
+		return nullptr;
+		
 	if (!priBase->IsA<APRI_TA>())
 	{
 		LOG("ERROR: APlayerReplicationInfo instance isn't a APRI_TA");
@@ -692,7 +700,7 @@ void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA* pri, const TitleAppearan
 	gfxPri.set_int(L"TitleColor", title.getIntTextColor());
 	gfxPri.set_int(L"TitleGlowColor", title.getIntGlowColor());
 
-	LOG("Applied title preset to {}'s UGFxData_PRI_TA...", pri->PlayerName.ToString());
+	LOG("Applied title preset for {}... (UGFxData_PRI_TA: {})", pri->PlayerName.ToString(), Format::ToHexString(pri));
 }
 
 void TitlesComponent::applyPresetToBanner(const TitleAppearance& title, UGFxData_PlayerTitles_TA* pt, bool log)

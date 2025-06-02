@@ -15,7 +15,6 @@ Enables client-side title customization (and more) in Rocket League
 - Spawn your custom title
   - Can also spawn any item based on its product ID
 - Make your custom title visible to other players with the mod (optional)
-  - Requires both players to have chat enabled
 - Censor the custom titles of other players with the mod (optional)
 
 ## 🔧 Installation
@@ -25,15 +24,17 @@ Download the latest release from the [Releases page](https://github.com/smallest
 You can use the following commands in the BakkesMod console (`F6`) or bind them to keys:
 
 | Command | Description | Best Used With |
-|--------|-------------|----------------|
+|---------|-------------|:--------------:|
 | `customtitle_spawn_custom_title` | Spawn current title preset | Key bind |
 | `customtitle_spawn_item <id>` | Spawn item based on its product ID | Console |
+
+<br>
 
 ## 🛠️ Building
 To build the project, follow these steps:
 
 ### 1. Initialize Submodules
-Run `init-submodules.bat` (or `init-submodules.sh` for bash) after cloning the repo to initialize the submodules in an optimal way
+Run `scripts\init-submodules.bat` (or `./scripts/init-submodules.sh` for bash) after cloning the repo to initialize the submodules in an optimal way
 
 <details> <summary>🔍 Why this instead of <code>git submodule update --init --recursive</code> ?</summary>
 <li>Avoids downloading 200MB of history for the <strong>nlohmann/json</strong> library</li>
@@ -62,6 +63,8 @@ git submodule update --init --recursive --depth 1
 ➡️ Now when you build the project for the first time, vcpkg will build/install the dependencies listed in `vcpkg.json`.
 
 More info: [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/consume/manifest-mode?tabs=msbuild%2Cbuild-MSBuild#2---integrate-vcpkg-with-your-build-system)
+
+<br>
 
 ## ❤️ Support
 If you found this plugin helpful and want to support future development:
