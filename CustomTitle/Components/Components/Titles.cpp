@@ -963,6 +963,8 @@ void TitlesComponent::display_titlePresetInfo()
 			{
 				_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name); // <--- i thought executeCommand is supposed to always run in game thread, ig we'll see...
 			}
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Press \"OK\" at the spawn prompt to keep your real title equipped and prevent potential weird behavior");
 		}
 
 		{
