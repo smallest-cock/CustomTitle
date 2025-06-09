@@ -69,7 +69,7 @@ public:
 
 	FString getTextFStr() const
 	{
-		return StringUtils::newFString(m_text);
+		return FString::create(m_text);
 	}
 
 	FColor getTextFColor() const { return m_textColor; }
@@ -117,23 +117,15 @@ public:
 	void setText(const std::string& str) { m_text = str; }
 
 	void setTextColor(const FColor& newCol) { m_textColor = newCol; }
-
 	void setTextColor(const float(&newCol)[4])
 	{
-		m_textColor.R = newCol[0] * 255;
-		m_textColor.G = newCol[1] * 255;
-		m_textColor.B = newCol[2] * 255;
-		m_textColor.A = newCol[3] * 255;
+		m_textColor = Colors::toFColor(newCol);
 	}
 
 	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
-
 	void setGlowColor(const float(&newCol)[4])
 	{
-		m_glowColor.R = newCol[0] * 255;
-		m_glowColor.G = newCol[1] * 255;
-		m_glowColor.B = newCol[2] * 255;
-		m_glowColor.A = newCol[3] * 255;
+		m_glowColor = Colors::toFColor(newCol);
 	}
 
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
@@ -219,8 +211,8 @@ public:
 class TitlesComponent : Component<TitlesComponent>
 {
 public:
-	TitlesComponent();
-	~TitlesComponent();
+	TitlesComponent() {}
+  ~TitlesComponent() {}
 
 	static constexpr const char* component_name = "Titles";
 	void Initialize(std::shared_ptr<GameWrapper> gw);
@@ -228,6 +220,7 @@ public:
 private:
 	void hookFunctions();
 	void setFilePaths();
+	void initCvars();
 
 private:
 	// event callbacks
@@ -238,6 +231,13 @@ private:
 
 	fs::path m_pluginFolder;
 	fs::path m_titlePresetsJson;
+
+	// cvar flags
+	std::shared_ptr<bool> m_showOtherPlayerTitles         = std::make_shared<bool>(true);
+	std::shared_ptr<bool> m_showTitleToOthers             = std::make_shared<bool>(true);
+	std::shared_ptr<bool> m_filterOtherPlayerTitles       = std::make_shared<bool>(false);
+	std::shared_ptr<bool> m_useHueColorPicker             = std::make_shared<bool>(true);
+	std::shared_ptr<bool> m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
 
 	bool m_enabled = false;
 	int m_activePresetIndex = 0;
@@ -287,7 +287,7 @@ public:
 
 	void spawnSelectedPreset(bool log = false);
 	void applySelectedAppearanceToUser();
-	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller, bool notify);
+	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller);
 
 	// testing
 	bool test1();

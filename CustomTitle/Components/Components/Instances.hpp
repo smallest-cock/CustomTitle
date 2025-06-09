@@ -376,7 +376,7 @@ public:
 	{
 		if (rawStr.empty())
 			return L"";
-		return censorStringToFString(StringUtils::newFString(rawStr));
+		return censorStringToFString(FString::create(rawStr));
 	}
 
 	inline std::string censorString(const FString& rawStr)
@@ -386,7 +386,7 @@ public:
 
 	inline std::string censorString(const std::string& rawStr)
 	{ 
-		return censorString(StringUtils::newFString(rawStr));
+		return censorString(FString::create(rawStr));
 	}
 };
 

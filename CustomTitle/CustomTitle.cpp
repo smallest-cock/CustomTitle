@@ -16,15 +16,6 @@ void CustomTitle::onLoad()
 
 	pluginInit();
 
-	// =================================== CVARS ========================================
-	// bools
-	auto showOtherPlayerTitles_cvar =		RegisterCvar_Bool(Cvars::showOtherPlayerTitles,		true);
-	auto showTitleToOthers_cvar =			RegisterCvar_Bool(Cvars::showTitleToOthers,			true);
-	auto filterOtherPlayerTitles_cvar =		RegisterCvar_Bool(Cvars::filterOtherPlayerTitles,	false);
-	auto applyOthersTitleNotif_cvar =		RegisterCvar_Bool(Cvars::applyOthersTitleNotif,		false);
-	
-	applyOthersTitleNotif_cvar.bindTo(m_notifyWhenApplyingOthersTitle);
-
 	// ================================== COMMANDS ======================================
 	RegisterCommand(Commands::spawnCustomTitle,		std::bind(&CustomTitle::cmd_spawnCustomTitle, this, std::placeholders::_1));
 	RegisterCommand(Commands::spawnItem,			std::bind(&CustomTitle::cmd_spawnItem, this, std::placeholders::_1));
@@ -37,7 +28,6 @@ void CustomTitle::onLoad()
 	// hooks with caller
 	gameWrapper->HookEventWithCallerPost<ActorWrapper>(Events::HUDBase_TA_OnChatMessage,
 		std::bind(&CustomTitle::event_HUDBase_TA_OnChatMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	
 
 
 	LOG("Custom Title loaded!");
@@ -69,7 +59,7 @@ bool CustomTitle::handleIncomingChatMessage(const FChatMessage& message, AHUDBas
 	// TODO: maybe perhaps possibly eventually make into an enum?
 	if (prefix == "title")
 	{
-		Titles.applyPresetFromChatData(content, message, caller, *m_notifyWhenApplyingOthersTitle);
+		Titles.applyPresetFromChatData(content, message, caller);
 		return true;
 	}
 	//else if (prefix == "name")
@@ -82,8 +72,6 @@ bool CustomTitle::handleIncomingChatMessage(const FChatMessage& message, AHUDBas
 
 void CustomTitle::pluginInit()
 {
-	m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
-
 	Format::construct_label({41, 11, 20, 6, 8, 13, 52, 12, 0, 3, 4, 52, 1, 24, 52, 44, 44, 37, 14, 22}, h_label);	// o b f u s a c i o n
 	PluginUpdates::check_for_updates(stringify_(CustomTitle), short_plugin_version);
 

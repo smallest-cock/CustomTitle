@@ -18,8 +18,7 @@ template <typename Derived> class Component
         ::LOG(std::vformat(str_with_component_name, std::make_format_args(args...)));
     }
 
-    CVarWrapper getCvar(const CvarData& cvar) { return _globalCvarManager->getCvar(cvar.name); }
-
+    // hooks
     void hookEvent(const char* funcName, std::function<void(std::string eventName)> callback)
     {
         gameWrapper->HookEvent(funcName, callback);
@@ -45,6 +44,48 @@ template <typename Derived> class Component
         gameWrapper->HookEventWithCallerPost<ActorWrapper>(function_name, callback);
         LOG("Hooked function post: \"{}\"", function_name);
     }
+
+    // cvars
+    CVarWrapper getCvar(const CvarData& cvar) { return _globalCvarManager->getCvar(cvar.name); }
+    
+    CVarWrapper registerCvar_bool(const CvarData& cvar, bool startingValue, bool log = true)
+	{
+		std::string value = startingValue ? "1" : "0";
+
+        if (log)
+			LOG("Registered CVar: {}", cvar.name);
+		return _globalCvarManager->registerCvar(cvar.name, value, cvar.description, true, true, 0, true, 1);
+	}
+
+    CVarWrapper registerCvar_string(const CvarData& cvar, const std::string& startingValue, bool log = true)
+	{
+        if (log)
+			LOG("Registered CVar: {}", cvar.name);
+		return _globalCvarManager->registerCvar(cvar.name, startingValue, cvar.description);
+	}
+
+	CVarWrapper registerCvar_number(const CvarData& cvar, float startingValue, bool hasMinMax, float min, float max, bool log = true)
+	{
+		std::string numberStr = std::to_string(startingValue);
+
+		if (log)
+			LOG("Registered CVar: {}", cvar.name);
+		if (hasMinMax)
+		{
+			return _globalCvarManager->registerCvar(cvar.name, numberStr, cvar.description, true, true, min, true, max);
+		}
+		else
+		{
+			return _globalCvarManager->registerCvar(cvar.name, numberStr, cvar.description);
+		}
+	}
+
+	CVarWrapper registerCvar_color(const CvarData& cvar, const std::string& startingValue, bool log = true)
+	{
+		if (log)
+			LOG("Registered CVar: {}", cvar.name);
+		return _globalCvarManager->registerCvar(cvar.name, startingValue, cvar.description);
+	}
 
     // void hook_functions();
 };

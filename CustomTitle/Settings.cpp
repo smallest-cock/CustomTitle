@@ -71,6 +71,7 @@ void CustomTitle::Settings_Tab()
 	auto showOtherPlayerTitles_cvar =		GetCvar(Cvars::showOtherPlayerTitles);
 	auto filterOtherPlayerTitles_cvar =		GetCvar(Cvars::filterOtherPlayerTitles);
 	auto applyOthersTitleNotif_cvar =		GetCvar(Cvars::applyOthersTitleNotif);
+	auto useHueColorPicker_cvar	=			GetCvar(Cvars::useHueColorPicker);
 	if (!showTitleToOthers_cvar)
 		return;
 
@@ -91,6 +92,10 @@ void CustomTitle::Settings_Tab()
 	bool applyOthersTitleNotif = applyOthersTitleNotif_cvar.getBoolValue();
 	if (ImGui::Checkbox("Show notification when applying other players' titles", &applyOthersTitleNotif))
 		applyOthersTitleNotif_cvar.setValue(applyOthersTitleNotif);
+
+	bool useHueColorPicker = useHueColorPicker_cvar.getBoolValue();
+	if (ImGui::Checkbox("Use hue wheel for color picker", &useHueColorPicker))
+		useHueColorPicker_cvar.setValue(useHueColorPicker);
 }
 
 void CustomTitle::TitlePresets_Tab()

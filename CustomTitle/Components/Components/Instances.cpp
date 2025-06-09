@@ -330,8 +330,8 @@ void InstancesComponent::SpawnNotification(const std::string& title, const std::
 	UNotification_TA* notification = notificationManager->PopUpOnlyNotification(notificationClass);
 	if (!notification) return;
 
-	FString titleFStr = StringUtils::newFString(title);
-	FString contentFStr = StringUtils::newFString(content);
+	FString titleFStr = FString::create(title);
+	FString contentFStr = FString::create(content);
 
 	notification->SetTitle(titleFStr);
 	notification->SetBody(contentFStr);

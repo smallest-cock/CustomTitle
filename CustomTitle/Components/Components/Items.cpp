@@ -63,7 +63,7 @@ bool ItemsComponent::SpawnProductData(const FOnlineProductData& productData, con
 		return false;
 	}
 
-	FString messageFstr = (spawnMessage == "") ? L"" : StringUtils::newFString(spawnMessage);
+	FString messageFstr = (spawnMessage == "") ? L"" : FString::create(spawnMessage);
 
 	saveData->eventGiveOnlineProduct(onlineProduct, messageFstr);
 	if (saveData->OnlineProductSet)

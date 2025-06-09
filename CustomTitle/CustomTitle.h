@@ -27,7 +27,6 @@ class CustomTitle: public BakkesMod::Plugin::BakkesModPlugin
 	fs::path m_pluginFolder;
 	void pluginInit();
 
-	std::shared_ptr<bool> m_notifyWhenApplyingOthersTitle;
 
 	// cvar helpers
 	CVarWrapper RegisterCvar_Bool(const CvarData& cvar, bool startingValue);
