@@ -85,11 +85,11 @@ void TitlesComponent::hookFunctions()
 		{
 		    return;
 
-			auto caller = reinterpret_cast<UPlayerTitleConfig_X*>(Caller.memory_address);
+			auto caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
 			if (!caller)
 			 return;
 
-			auto params = reinterpret_cast<UPlayerTitleConfig_X_execGetTitleData_Params*>(Params);
+			auto params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
 			if (!params)
 			 return;
 
@@ -208,7 +208,7 @@ void TitlesComponent::event_GFxData_PlayerTitles_TA_UpdateSelectedTitle(ActorWra
 // ###############################################    FUNCTIONS    ##############################################
 // ##############################################################################################################
 
-void TitlesComponent::updateGameTitleAppearances(UPlayerTitleConfig_X* config, bool forceSearch)
+void TitlesComponent::updateGameTitleAppearances(UTitleConfig_X* config, bool forceSearch)
 {
 	if (forceSearch || !config)
 	{
@@ -219,7 +219,7 @@ void TitlesComponent::updateGameTitleAppearances(UPlayerTitleConfig_X* config, b
 
 	m_gameTitles.clear(); // yeet old data
 
-	LOG("UPlayerTitleConfig_X has {} titles", config->Titles.size());
+	LOG("UTitleConfig_X has {} titles", config->Titles.size());
 	for (const FPlayerTitleData& title_data : config->Titles)
 	{
 		if (title_data.Id == L"None" || title_data.Text.empty())
@@ -411,7 +411,7 @@ void TitlesComponent::spawnSelectedPreset(bool log)
 	if (!customTitleId.IsValid())
 		return;
 
-	UPlayerTitleConfig_X* config = getTitleConfig();
+	UTitleConfig_X* config = getTitleConfig();
 	if (!validUObject(config))
 		return;
 
@@ -453,10 +453,10 @@ FName TitlesComponent::getCustomTitleId()
 	if (id >= gnamesSize)
 		return FName(-1);
 
-	UPlayerTitleConfig_X* config = getTitleConfig();
+	UTitleConfig_X* config = getTitleConfig();
 	if (!validUObject(config))
 	{
-		LOG("Oh no UPlayerTitleConfig_X* is invalid");
+		LOG("Oh no UTitleConfig_X* is invalid");
 		return FName(-1);
 	}
 
@@ -597,23 +597,23 @@ void TitlesComponent::addPresetsFromJson()
 // ##########################################   STATIC FUNCTIONS    #############################################
 // ##############################################################################################################
 
-UPlayerTitleConfig_X* TitlesComponent::getTitleConfig(bool forceSearch)
+UTitleConfig_X* TitlesComponent::getTitleConfig(bool forceSearch)
 {
-	static UPlayerTitleConfig_X* config = Instances.GetInstanceOf<UPlayerTitleConfig_X>();
+	static UTitleConfig_X* config = Instances.GetInstanceOf<UTitleConfig_X>();
 
 	if (forceSearch || !validUObject(config))
-		config = Instances.GetInstanceOf<UPlayerTitleConfig_X>();
+		config = Instances.GetInstanceOf<UTitleConfig_X>();
 
 	return config;
 }
 
-FPlayerTitleData& TitlesComponent::getTitleFromConfig(int index, UPlayerTitleConfig_X* config)
+FPlayerTitleData& TitlesComponent::getTitleFromConfig(int index, UTitleConfig_X* config)
 {
 	if (!config)
 	{
 		config = getTitleConfig();
 		if (!config)
-			throw std::exception("UPlayerTitleConfig_X* is null");
+			throw std::exception("UTitleConfig_X* is null");
 	}
 	if (index < 0 || index >= config->Titles.size())
 		throw std::exception(std::format("Title at index {} doesn't exist! Titles size: {}", index, config->Titles.size()).c_str());

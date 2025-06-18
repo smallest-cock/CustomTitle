@@ -259,7 +259,7 @@ private:
 	inline fs::path getPluginFolder() const { return m_pluginFolder; }
 
 	void refreshPriTitlePresets(AGFxHUD_TA* hud = nullptr);
-	void updateGameTitleAppearances(UPlayerTitleConfig_X* config = nullptr, bool forceSearch = false);
+	void updateGameTitleAppearances(UTitleConfig_X* config = nullptr, bool forceSearch = false);
 
 	FName getCustomTitleId();
 
@@ -272,8 +272,8 @@ private:
 	static void applyPresetToBanner(const TitleAppearance& title, UGFxData_PlayerTitles_TA* pt = nullptr, bool log = false);
 	static void applyPresetToPri(UGFxData_PRI_TA* pri, const TitleAppearance& title);
 
-	static FPlayerTitleData& getTitleFromConfig(int index, UPlayerTitleConfig_X* config = nullptr);
-	static UPlayerTitleConfig_X* getTitleConfig(bool forceSearch = false);
+	static FPlayerTitleData& getTitleFromConfig(int index, UTitleConfig_X* config = nullptr);
+	static UTitleConfig_X* getTitleConfig(bool forceSearch = false);
 	static AGFxHUD_TA* getGFxHUD();
 	//static UGFxData_PlayerTitles_TA* getGFxPlayerTitles();	// banner
 	static UGFxData_PRI_TA* getUserGFxPRI();					// in-game
