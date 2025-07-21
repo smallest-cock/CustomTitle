@@ -1,14 +1,67 @@
-name: 🧱 Build DLL (Windows)
+name: 🧱 Build DLL & release (Windows)
+
+env:
+    PLUGIN_NAME: CustomTitle
+    TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
 
 on:
+    push:
+        tags:
+            - "v*.*.*"
     workflow_dispatch:
+        inputs:
+            tag:
+                description: "Release tag (e.g. v1.0.1)"
+                required: true
+permissions:
+    contents: write
 
 jobs:
+    check-changelog:
+        name: Check changelog (main)
+        runs-on: windows-latest
+        outputs:
+            changelog: ${{ steps.changelog.outputs.changelog }}
+        steps:
+            - name: 📥 Checkout repository (main)
+              uses: actions/checkout@v4
+              with:
+                  ref: main
+                  submodules: false
+
+            - name: 📝 Extract changes from changelog
+              id: changelog
+              shell: bash
+              run: |
+                  # Prefer manual input if available
+                  TAG="${{ github.event.inputs.tag || github.ref_name }}"
+
+                  # fail if tag not found in CHANGELOG.md
+                  if ! grep -q "^## $TAG" CHANGELOG.md; then
+                    echo "❌ Tag '$TAG' not found in CHANGELOG.md"
+                    exit 1
+                  fi
+
+                  echo "Using tag: $TAG"
+
+                  NOTES=$(awk "/^## $TAG/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md)
+
+                  echo "Extracted notes:"
+                  echo "$NOTES"
+
+                  {
+                    echo "changelog<<EOF"
+                    echo "$NOTES"
+                    echo "EOF"
+                  } >> "$GITHUB_OUTPUT"
+
     build:
+        name: Build DLL
+        needs: check-changelog
         runs-on: windows-latest # uses pwsh (PowerShell Core) as default shell
 
         steps:
-            - name: 📥 Checkout repository (with submodules)
+            - name: 📥 Checkout repository (without submodules)
               uses: actions/checkout@v4
               with:
                   submodules: false
@@ -43,25 +96,33 @@ jobs:
               uses: microsoft/setup-msbuild@v2
 
             - name: 🔨 Build solution
-              run: msbuild CustomTitle.sln /p:Configuration=Release /p:Platform=x64 /p:VcpkgEnabled=true /p:VcpkgRoot=${{ github.workspace }}\vcpkg
+              run: msbuild ${{ env.PLUGIN_NAME }}.sln /p:Configuration=Release /p:Platform=x64 /p:VcpkgEnabled=true /p:VcpkgRoot=${{ github.workspace }}\vcpkg
 
-            - name: 📦 Upload build artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                  name: dll-and-pdb
-                  path: |
-                      ${{ github.workspace }}\plugins\*.dll
-                      ${{ github.workspace }}\plugins\*.pdb
-
-            - name: 💼 Prepare installation files
+            - name: 🥵 Prepare release files
+              shell: bash
               run: |
-                  mkdir installation_zip
-                  copy "${{ github.workspace }}\plugins\*.dll" installation_zip\
-                  copy "${{ github.workspace }}\scripts\install.bat" installation_zip\
-              shell: cmd
+                  7z a source.zip * -xr!vcpkg_installed -xr!README.md -xr!build -xr!plugins -xr!scripts -xr!assets -xr!.git
+                  mkdir -p dist temp/debug temp/installation_zip
+                  mv ./source.zip temp/debug
+                  cp ./plugins/*.dll temp/installation_zip
+                  mv ./scripts/install.bat temp/installation_zip
+                  mv ./plugins/*.dll temp/debug
+                  mv ./plugins/*.pdb temp/debug
+                  7z a "dist/${{ env.PLUGIN_NAME }}.zip" ./temp/installation_zip/*
+                  7z a dist/debug.zip ./temp/debug/*
 
-            - name: 📦 Upload installation package
-              uses: actions/upload-artifact@v4
+            - name: 🚀 Create release
+              uses: softprops/action-gh-release@v2
               with:
-                  name: CustomTitle
-                  path: installation_zip\*
+                  tag_name: ${{ env.TAG_NAME }}
+                  body: |
+                      ## Install Steps
+                      1. Close Rocket League
+
+                      2. Click `${{ env.PLUGIN_NAME }}.zip` below to download it
+
+                      3. Extract `${{ env.PLUGIN_NAME }}.zip` and run `install.bat`
+
+                      ## Notes
+                      ${{ needs.check-changelog.outputs.changelog }}
+                  files: dist/*.zip
