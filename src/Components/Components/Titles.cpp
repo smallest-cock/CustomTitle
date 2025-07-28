@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Titles.hpp"
-#include "CustomTitle.h"
-
+#include "Items.hpp"
+#include <ModUtils/wrappers/GFxWrapper.hpp>
 
 
 // ##############################################################################################################
@@ -973,7 +973,7 @@ void TitlesComponent::display_titlePresetInfo()
 			);
 		}
 
-		ImGui::Text("%i title presets", m_gameTitles.size());
+		ImGui::Text("%zu title presets", m_gameTitles.size());
 	}
 
 	GUI::Spacing(2);

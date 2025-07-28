@@ -77,26 +77,23 @@ jobs:
                       ${{ github.workspace }}\vcpkg_installed
                   key: vcpkg-${{ hashFiles('**/vcpkg.json') }}-${{ runner.os }}
 
-            - name: 📥 Clone vcpkg (if not cached)
+            - name: 📥 vcpkg setup (if not cached)
               if: steps.cache-vcpkg.outputs.cache-hit != 'true'
               run: |
-                  git clone https://github.com/microsoft/vcpkg.git "${{ github.workspace }}\vcpkg"
-                  cd vcpkg
-                  git submodule update --init --recursive
-              shell: bash
+                  git clone --recurse-submodules https://github.com/microsoft/vcpkg.git "${{ github.workspace }}/vcpkg"
+                  ./vcpkg/bootstrap-vcpkg.bat
 
-            - name: 🛠️ Manual vcpkg setup (if not cached)
-              if: steps.cache-vcpkg.outputs.cache-hit != 'true'
-              run: |
-                  cd vcpkg
-                  ./bootstrap-vcpkg.bat
-                  ./vcpkg integrate install
+            - name: 🥷 Set up Ninja
+              uses: seanmiddleditch/gha-setup-ninja@v3
 
-            - name: 🛠️ Set up MSBuild
-              uses: microsoft/setup-msbuild@v2
+            - name: ⚙️ Set up CMake
+              uses: jwlawson/actions-setup-cmake@v1
 
-            - name: 🔨 Build solution
-              run: msbuild ${{ env.PLUGIN_NAME }}.sln /p:Configuration=Release /p:Platform=x64 /p:VcpkgEnabled=true /p:VcpkgRoot=${{ github.workspace }}\vcpkg
+            - name: 🧱 Configure using CMake preset
+              run: cmake --preset windows-x64-msvc
+
+            - name: 🔨 Build using CMake preset
+              run: cmake --build --preset default
 
             - name: 🥵 Prepare release files
               shell: bash

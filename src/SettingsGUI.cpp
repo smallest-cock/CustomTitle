@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "CustomTitle.h"
+#include "Macros.hpp"
+#include "Components/Components/Titles.hpp"
+#include "Components/Components/Textures.hpp"
 
 
 void CustomTitle::RenderSettings()
@@ -67,11 +70,11 @@ void CustomTitle::RenderWindow()
 
 void CustomTitle::Settings_Tab()
 {
-	auto showTitleToOthers_cvar =			GetCvar(Cvars::showTitleToOthers);
-	auto showOtherPlayerTitles_cvar =		GetCvar(Cvars::showOtherPlayerTitles);
-	auto filterOtherPlayerTitles_cvar =		GetCvar(Cvars::filterOtherPlayerTitles);
-	auto applyOthersTitleNotif_cvar =		GetCvar(Cvars::applyOthersTitleNotif);
-	auto useHueColorPicker_cvar	=			GetCvar(Cvars::useHueColorPicker);
+	auto showTitleToOthers_cvar =			getCvar(Cvars::showTitleToOthers);
+	auto showOtherPlayerTitles_cvar =		getCvar(Cvars::showOtherPlayerTitles);
+	auto filterOtherPlayerTitles_cvar =	getCvar(Cvars::filterOtherPlayerTitles);
+	auto applyOthersTitleNotif_cvar =		getCvar(Cvars::applyOthersTitleNotif);
+	auto useHueColorPicker_cvar	=		getCvar(Cvars::useHueColorPicker);
 	if (!showTitleToOthers_cvar)
 		return;
 

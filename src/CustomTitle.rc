@@ -50,7 +50,7 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Norwegian Bokmål (Norway) resources
+// Norwegian Bokmï¿½l (Norway) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NOR)
 LANGUAGE LANG_NORWEGIAN, SUBLANG_NORWEGIAN_BOKMAL
@@ -78,13 +78,13 @@ BEGIN
     BEGIN
         BLOCK "041404b0"
         BEGIN
-            VALUE "CompanyName", "TODO: <Company name>"
-            VALUE "FileDescription", "TODO: <File description>"
+            VALUE "CompanyName", "Tesla"
+            VALUE "FileDescription", "BakkesMod plugin"
             VALUE "FileVersion", stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD)
             VALUE "InternalName", "CustomTitle.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2020"
+            VALUE "LegalCopyright", "Copyright (C) 2025"
             VALUE "OriginalFilename", "CustomTitle.dll"
-            VALUE "ProductName", "TODO: <Product name>"
+            VALUE "ProductName", "Custom Title"
             VALUE "ProductVersion", stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD)
         END
     END
@@ -94,7 +94,7 @@ BEGIN
     END
 END
 
-#endif    // Norwegian Bokmål (Norway) resources
+#endif    // Norwegian Bokmï¿½l (Norway) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

@@ -3,9 +3,9 @@ Enables client-side title customization (and more) in Rocket League
 
 🎥 Video showcase: https://youtu.be/qGLaQm3ruLg
 
-<img src="./assets/images/screenshots/spawn_ss.png" width="80%"/>
-<img src="./assets/images/screenshots/menu_ss.png" width="40%"/>
-<img src="./assets/images/screenshots/in_game_ss.png" width="40%"/>
+<img src="./assets/images/screenshots/spawn_ss.png" width="70%"/>
+<img src="./assets/images/screenshots/menu_ss.png" width="70%"/>
+<!-- <img src="./assets/images/screenshots/in_game_ss.png" width="70%"/> -->
 
 ## ✨ Features
 - Edit text, text color & glow color
@@ -31,38 +31,51 @@ You can use the following commands in the BakkesMod console (`F6`) or bind them 
 <br>
 
 ## 🛠️ Building
-To build the project, follow these steps:
+> [!NOTE]  
+> Building this plugin requires **64-bit Windows** and the **MSVC** toolchain
+> - Due to reliance on the Windows SDK and the need for ABI compatibility with Rocket League
 
 ### 1. Initialize Submodules
-Run `scripts\init-submodules.bat` (or `./scripts/init-submodules.sh` for bash) after cloning the repo to initialize the submodules in an optimal way
+Run `./scripts/init-submodules.bat` after cloning the repo to initialize the submodules optimally.
 
 <details> <summary>🔍 Why this instead of <code>git submodule update --init --recursive</code> ?</summary>
 <li>Avoids downloading 200MB of history for the <strong>nlohmann/json</strong> library</li>
-<li>Allows Git to detect updates for the other submodules</li>
+<li>Ensures Git can track submodule updates</li>
 </details>
 
----
+### 2. Set up vcpkg
+This project uses [DirectXTex](https://github.com/microsoft/DirectXTex) and [MinHook](https://github.com/TsudaKageyu/minhook) which are installed via vcpkg. Do one of the following:
 
-### 2. Install Dependencies via vcpkg
-This project uses [DirectXTex](https://github.com/microsoft/DirectXTex) and [MinHook](https://github.com/TsudaKageyu/minhook) which are installed via vcpkg
+- **Install vcpkg** (if you dont already have it):
+  ```bash
+  git clone --recurse-submodules https://github.com/microsoft/vcpkg.git ./vcpkg
+  ./vcpkg/bootstrap-vcpkg.bat
+  ```
+- **Use an existing vcpkg installation** by specifying it in a `./CMakeUserPresets.json`:
+  ```json
+  {
+      "version": 10,
+      "configurePresets": [
+          {
+              "name": "windows-x64-msvc-with-my-vcpkg",
+              "inherits": "windows-x64-msvc",
+              "cacheVariables": {
+                  "CMAKE_TOOLCHAIN_FILE": "C:/<your vcpkg path>/scripts/buildsystems/vcpkg.cmake"
+              }
+          }
+      ]
+  }
+    ```
 
-**Install vcpkg** (if you dont already have it):
-```bash
-# Clone vcpkg (minimal download)
-git clone https://github.com/microsoft/vcpkg.git --depth 1
-cd vcpkg
-
-# Initialize submodules (minimal download)
-git submodule update --init --recursive --depth 1
-
-# Bootstrap vcpkg and enable MSBuild integration
-./bootstrap-vcpkg.bat
-./vcpkg integrate install
-```
-
-➡️ Now when you build the project for the first time, vcpkg will build/install the dependencies listed in `vcpkg.json`.
+➡️ Now when you build the project for the first time, vcpkg will build/install the dependencies listed in `./vcpkg.json`.
 
 More info: [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/consume/manifest-mode?tabs=msbuild%2Cbuild-MSBuild#2---integrate-vcpkg-with-your-build-system)
+
+### 3. Build with CMake
+1. Install [CMake](https://cmake.org/download) and [Ninja](https://github.com/ninja-build/ninja/releases) (or another build system if you're not using Ninja)
+2. Run `cmake --preset windows-x64-msvc` (or a custom preset in `CMakeUserPresets.json`) to generate build files in `./build`
+3. Run `cmake --build build`
+   - The built binaries will be in `./plugins`
 
 <br>
 

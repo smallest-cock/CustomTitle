@@ -1,7 +1,5 @@
 #pragma once
 #include "Component.hpp"
-#include "Items.hpp"
-
 
 
 // returns a AARRGGBB packed 32-bit int
