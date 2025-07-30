@@ -76,8 +76,7 @@ jobs:
               id: cache-vcpkg
               uses: actions/cache@v4
               with:
-                  path: |
-                      ${{ github.workspace }}\vcpkg_installed
+                  path: build\vcpkg_installed # <-- cmake puts vcpkg dependencies here
                   key: vcpkg-${{ hashFiles('**/vcpkg.json') }}-${{ runner.os }}
 
             - name: 📥 vcpkg setup (if not cached)
