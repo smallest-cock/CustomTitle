@@ -1,13 +1,12 @@
 #include "pch.h"
-#include "CustomTitle.h"
+#include "CustomTitle.hpp"
 #include "Macros.hpp"
-#include "Components/Components/Titles.hpp"
-#include "Components/Components/Textures.hpp"
-
+#include "components/Titles.hpp"
+#include "components/Textures.hpp"
 
 void CustomTitle::RenderSettings()
 {
-	const float content_height = ImGui::GetContentRegionAvail().y - footer_height;  // available height after accounting for footer
+	const float content_height = ImGui::GetContentRegionAvail().y - footer_height; // available height after accounting for footer
 
 	if (ImGui::BeginChild("MainSettingsSection", ImVec2(0, content_height)))
 	{
@@ -18,11 +17,7 @@ void CustomTitle::RenderSettings()
 		// open bindings window button
 		std::string openMenuCommand = "togglemenu " + GetMenuName();
 		if (ImGui::Button("Open Menu"))
-		{
-			GAME_THREAD_EXECUTE_CAPTURE(
-				cvarManager->executeCommand(openMenuCommand);
-			, openMenuCommand);
-		}
+			GAME_THREAD_EXECUTE_CAPTURE(cvarManager->executeCommand(openMenuCommand);, openMenuCommand);
 
 		GUI::Spacing(8);
 
@@ -31,7 +26,7 @@ void CustomTitle::RenderSettings()
 		ImGui::PushItemWidth(150);
 		ImGui::InputText("", &openMenuCommand, ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopItemWidth();
-		
+
 		GUI::Spacing(8);
 
 		if (ImGui::Button(std::format("Open {} folder", stringify_(CustomTitle)).c_str()))
@@ -70,11 +65,11 @@ void CustomTitle::RenderWindow()
 
 void CustomTitle::Settings_Tab()
 {
-	auto showTitleToOthers_cvar =			getCvar(Cvars::showTitleToOthers);
-	auto showOtherPlayerTitles_cvar =		getCvar(Cvars::showOtherPlayerTitles);
-	auto filterOtherPlayerTitles_cvar =	getCvar(Cvars::filterOtherPlayerTitles);
-	auto applyOthersTitleNotif_cvar =		getCvar(Cvars::applyOthersTitleNotif);
-	auto useHueColorPicker_cvar	=		getCvar(Cvars::useHueColorPicker);
+	auto showTitleToOthers_cvar       = getCvar(Cvars::showTitleToOthers);
+	auto showOtherPlayerTitles_cvar   = getCvar(Cvars::showOtherPlayerTitles);
+	auto filterOtherPlayerTitles_cvar = getCvar(Cvars::filterOtherPlayerTitles);
+	auto applyOthersTitleNotif_cvar   = getCvar(Cvars::applyOthersTitleNotif);
+	auto useHueColorPicker_cvar       = getCvar(Cvars::useHueColorPicker);
 	if (!showTitleToOthers_cvar)
 		return;
 
@@ -106,7 +101,7 @@ void CustomTitle::TitlePresets_Tab()
 	ImVec2 total_size = ImGui::GetContentRegionAvail();
 
 	{
-		GUI::ScopedChild c{ "PresetList", ImVec2(total_size.x * 0.3f, 0), true };
+		GUI::ScopedChild c{"PresetList", ImVec2(total_size.x * 0.3f, 0), true};
 
 		Titles.display_titlePresetList();
 	}
@@ -114,9 +109,9 @@ void CustomTitle::TitlePresets_Tab()
 	ImGui::SameLine();
 
 	{
-		GUI::ScopedChild c{ "PresetInfo", ImGui::GetContentRegionAvail(), true };
-	
-        Titles.display_titlePresetInfo();
+		GUI::ScopedChild c{"PresetInfo", ImGui::GetContentRegionAvail(), true};
+
+		Titles.display_titlePresetInfo();
 	}
 }
 

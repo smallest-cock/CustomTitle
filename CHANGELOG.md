@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.8
+- Fixed crashes when applying custom icons (due to an outdated SDK)
+
 ## v1.0.7
 - Updated internal SDK to match latest RL update (v2.54)
 - Automated the release process 💨👽

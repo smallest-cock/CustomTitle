@@ -1,6 +1,5 @@
 #include "pch.h"
-#include "CustomTitle.h"
-
+#include "CustomTitle.hpp"
 
 // cvars
 CVarWrapper CustomTitle::registerCvar_Bool(const CvarData& cvar, bool startingValue)
@@ -20,13 +19,9 @@ CVarWrapper CustomTitle::registerCvar_Number(const CvarData& cvar, float startin
 	std::string numberStr = std::to_string(startingValue);
 
 	if (hasMinMax)
-	{
 		return cvarManager->registerCvar(cvar.name, numberStr, cvar.description, true, true, min, true, max);
-	}
 	else
-	{
 		return cvarManager->registerCvar(cvar.name, numberStr, cvar.description);
-	}
 }
 
 CVarWrapper CustomTitle::registerCvar_Color(const CvarData& cvar, const std::string& startingValue)
@@ -39,23 +34,15 @@ void CustomTitle::registerCommand(const CvarData& cvar, const std::function<void
 	cvarManager->registerNotifier(cvar.name, callback, cvar.description, PERMISSION_ALL);
 }
 
-CVarWrapper CustomTitle::getCvar(const CvarData& cvar)
-{
-	return cvarManager->getCvar(cvar.name);
-}
-
+CVarWrapper CustomTitle::getCvar(const CvarData& cvar) { return cvarManager->getCvar(cvar.name); }
 
 // commands
 void CustomTitle::runCommand(const CvarData& command, float delaySeconds)
 {
 	if (delaySeconds == 0)
-	{
 		cvarManager->executeCommand(command.name);
-	}
 	else if (delaySeconds > 0)
-	{
 		gameWrapper->SetTimeout([this, command](GameWrapper* gw) { cvarManager->executeCommand(command.name); }, delaySeconds);
-	}
 }
 
 void CustomTitle::runCommandInterval(const CvarData& command, int numIntervals, float delaySeconds, bool delayFirstCommand)
@@ -82,7 +69,7 @@ void CustomTitle::autoRunCommand(const CvarData& autoRunBool, const CvarData& co
 }
 
 void CustomTitle::autoRunCommandInterval(
-	const CvarData& autoRunBool, const CvarData& command, int numIntervals, float delaySeconds, bool delayFirstCommand)
+    const CvarData& autoRunBool, const CvarData& command, int numIntervals, float delaySeconds, bool delayFirstCommand)
 {
 	auto autoRunBool_cvar = getCvar(autoRunBool);
 	if (!autoRunBool_cvar || !autoRunBool_cvar.getBoolValue())
@@ -90,7 +77,6 @@ void CustomTitle::autoRunCommandInterval(
 
 	runCommandInterval(command, numIntervals, delaySeconds, delayFirstCommand);
 }
-
 
 // hooks
 void CustomTitle::hookEvent(const char* funcName, std::function<void(std::string)> callback)

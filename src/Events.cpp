@@ -1,27 +1,27 @@
 #include "pch.h"
-#include "CustomTitle.h"
+#include "CustomTitle.hpp"
 #include "Events.hpp"
-#include "Components/Components/Titles.hpp"
-
+#include "components/Titles.hpp"
 
 void CustomTitle::initHooks()
 {
-	hookWithCallerPost(Events::HUDBase_TA_OnChatMessage, [this](ActorWrapper Caller, void* Params, ...)
-	{
-		auto params = reinterpret_cast<AHUDBase_TA_execOnChatMessage_Params*>(Params);
-		if (!params)
-			return;
+	hookWithCallerPost(Events::HUDBase_TA_OnChatMessage,
+	    [this](ActorWrapper Caller, void* Params, ...)
+	    {
+		    auto params = reinterpret_cast<AHUDBase_TA_execOnChatMessage_Params*>(Params);
+		    if (!params)
+			    return;
 
-		FChatMessage& msg = params->NewMsg;
-		if (!msg.bPreset)
-			return;
+		    FChatMessage& msg = params->NewMsg;
+		    if (!msg.bPreset)
+			    return;
 
-		auto caller = reinterpret_cast<AHUDBase_TA*>(Caller.memory_address);
-		if (!caller)
-			return;
+		    auto caller = reinterpret_cast<AHUDBase_TA*>(Caller.memory_address);
+		    if (!caller)
+			    return;
 
-		handleIncomingChatMessage(msg, caller);
-	});
+		    handleIncomingChatMessage(msg, caller);
+	    });
 }
 
 // Routes incoming chat data and calls appropriate function based on the contents
@@ -37,20 +37,20 @@ bool CustomTitle::handleIncomingChatMessage(const FChatMessage& message, AHUDBas
 		return false;
 
 	// Split prefix and content
-	std::string prefix = msgStr.substr(0, separatorPos);
+	std::string prefix  = msgStr.substr(0, separatorPos);
 	std::string content = msgStr.substr(separatorPos + 1);
 
-	// Route by prefix 
+	// Route by prefix
 	// TODO: maybe perhaps possibly eventually make into an enum?
 	if (prefix == "title")
 	{
 		Titles.applyPresetFromChatData(content, message, caller);
 		return true;
 	}
-	//else if (prefix == "name")
+	// else if (prefix == "name")
 	//{
 	//	// Handle a "name" message type
-	//}
+	// }
 
 	return false; // Unrecognized prefix
 }
