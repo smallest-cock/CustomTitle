@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 4.0)
 
-project(CustomTitle VERSION 1.0.8)
+project(CustomTitle VERSION 1.0.9)
 
 set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")  # `/MT`... cant use "MultiThreadedDLL" (/MD) bc vcpkg static libs won't work.. and we want static vcpkg libs
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")  # `/MT`... cant use "MultiThreadedDLL" (/MD) bc vcpkg static libs won't work, and we want static vcpkg libs
 set(CMAKE_GENERATOR_TOOLSET "v142" CACHE STRING "Toolset version") # 142 = RL's version
 
 # set output directory to ./plugins

@@ -1,4 +1,6 @@
+#include "BakkesmodPluginTemplate/IMGUI/imgui.h"
 #include "pch.h"
+#include "ModUtils/gui/GuiTools.hpp"
 #include "CustomTitle.hpp"
 #include "Macros.hpp"
 #include "components/Titles.hpp"
@@ -57,6 +59,40 @@ void CustomTitle::RenderWindow()
 		{
 			Settings_Tab();
 			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Info"))
+		{
+			GUI::Spacing(2);
+
+			ImGui::TextColored(GUI::Colors::Yellow, "Important plugin info:");
+
+			GUI::Spacing(4);
+
+			ImGui::TextColored(GUI::Colors::BlueGreen, "This mod simply alters the appearance of your equipped title (client-side)");
+			ImGui::BulletText("It doesn't create new titles");
+			ImGui::BulletText("It doesn't give you more titles than you already own");
+
+			GUI::Spacing(2);
+
+			ImGui::TextColored(
+			    GUI::Colors::BlueGreen, "The presets exist as a way for you to save your designs and easily switch between them");
+			ImGui::BulletText("You can think of it like applying different decals (presets) to a single car (your equipped title)");
+
+			GUI::Spacing(2);
+
+			ImGui::TextColored(
+			    GUI::Colors::BlueGreen, "The \"Spawn\" button is just a fun visual effect. It doesn't actually give you the title");
+			ImGui::BulletText("You should always press \"OK\" after spawning a title (not \"EQUIP NOW\") to avoid buggy behavior");
+			ImGui::BulletText(
+			    "You may notice 2 \"custom\" titles in your inventory after pressing the spawn button. Don't try to equip them.\n"
+			    "One is your currently equipped title (with the custom appearance applied), the other is a fake dummy title\n"
+			    "that was used to create the spawn effect. Equipping the dummy title may cause buggy behavior.");
+
+			GUI::Spacing(8);
+
+			GUI::centerTextColoredX(GUI::Colors::VividOrange, "This plugin is incompatible with AlphaConsole's title feature.");
+			GUI::centerTextColoredX(GUI::Colors::VividOrange, "Make sure that feature is disabled if you have AlphaConsole installed.");
 		}
 
 		ImGui::EndTabBar();
