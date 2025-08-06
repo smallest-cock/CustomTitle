@@ -1,4 +1,6 @@
 #include "pch.h"
+#include "Cvars.hpp"
+#include <ModUtils/gui/GuiTools.hpp>
 #include "Titles.hpp"
 #include "Items.hpp"
 #include <ModUtils/wrappers/GFxWrapper.hpp>
@@ -38,9 +40,7 @@ void TitlesComponent::setFilePaths()
 		LOG("... so we created it :)");
 	}
 	else
-	{
 		LOG("Found '{}'", m_titlePresetsJson.filename().string());
-	}
 }
 
 void TitlesComponent::hookFunctions()
@@ -58,11 +58,11 @@ void TitlesComponent::hookFunctions()
 		    if (!m_shouldOverwriteGetTitleDataReturnVal)
 			    return;
 
-		    auto caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
+		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
 		    if (!caller)
 			    return;
 
-		    auto params = reinterpret_cast<UGFxData_PlayerTitles_TA_execGetTitleData_Params*>(Params);
+		    auto* params = reinterpret_cast<UGFxData_PlayerTitles_TA_execGetTitleData_Params*>(Params);
 		    if (!params)
 			    return;
 
@@ -72,7 +72,7 @@ void TitlesComponent::hookFunctions()
 		        LOG("GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
 		    */
 
-		    if (params->TitleId != m_selectedTitleId.c_str())
+		    if (params->TitleId != StringUtils::ToWideString(m_selectedTitleId).c_str())
 			    return;
 
 		    TitleAppearance* preset = getActivePreset();
@@ -90,11 +90,11 @@ void TitlesComponent::hookFunctions()
 	    {
 		    return;
 
-		    auto caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
+		    auto* caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
 		    if (!caller)
 			    return;
 
-		    auto params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
+		    auto* params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
 		    if (!params)
 			    return;
 
@@ -104,7 +104,7 @@ void TitlesComponent::hookFunctions()
 		        LOG("PlayerTitleConfig_X.GetTitleData(\"{}\") was called", titleId);
 		    */
 
-		    if (params->TitleId != m_selectedTitleId.c_str())
+		    if (params->TitleId != StringUtils::ToWideString(m_selectedTitleId).c_str())
 			    return;
 
 		    TitleAppearance* preset = getActivePreset();
@@ -118,7 +118,7 @@ void TitlesComponent::hookFunctions()
 
 	auto refreshPriTitlePresetsUsingHud = [this](ActorWrapper Caller, void* params, std::string eventName)
 	{
-		auto caller = reinterpret_cast<AGFxHUD_TA*>(Caller.memory_address);
+		auto* caller = reinterpret_cast<AGFxHUD_TA*>(Caller.memory_address);
 		if (!caller)
 			return;
 
@@ -135,11 +135,11 @@ void TitlesComponent::hookFunctions()
 	    {
 		    // TODO: check cvar if custom title is enabled
 
-		    auto userPri = getUserGFxPRI();
+		    auto* userPri = getUserGFxPRI();
 		    if (!userPri)
 			    return;
 
-		    auto title = getActivePreset();
+		    auto* title = getActivePreset();
 		    if (!title)
 			    return;
 
@@ -155,7 +155,7 @@ void TitlesComponent::hookFunctions()
 		    if (!showTitleToOthers_cvar || !showTitleToOthers_cvar.getBoolValue())
 			    return;
 
-		    auto caller = reinterpret_cast<APlayerController*>(Caller.memory_address);
+		    auto* caller = reinterpret_cast<APlayerController*>(Caller.memory_address);
 		    if (!caller)
 			    return;
 
@@ -182,17 +182,16 @@ void TitlesComponent::initCvars()
 
 void TitlesComponent::event_GFxData_PlayerTitles_TA_UpdateSelectedTitle(ActorWrapper Caller, void* Params, std::string eventName)
 {
-	auto caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
+	auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
 	if (!caller)
 		return;
 
-	auto params = reinterpret_cast<UGFxData_PlayerTitles_TA_execUpdateSelectedTitle_Params*>(Params);
+	auto* params = reinterpret_cast<UGFxData_PlayerTitles_TA_execUpdateSelectedTitle_Params*>(Params);
 	if (!params)
 		return;
 
-	std::string titleId = params->Title.ToString();
-	m_selectedTitleId   = StringUtils::ToWideString(titleId);
-	LOG("Updated m_selectedTitleId: \"{}\"", titleId);
+	m_selectedTitleId = params->Title.ToString();
+	LOG("Updated m_selectedTitleId: \"{}\"", m_selectedTitleId);
 
 	// this bool exists so we only modify the FPlayerTitleData of selected title if user has just selected it via the RL title picker
 	// bc we dont wanna overwrite it EVERY time FPlayerTitleData is requested (via UGFxData_PlayerTitles_TA::GetTitleData)
@@ -244,7 +243,7 @@ void TitlesComponent::refreshPriTitlePresets(AGFxHUD_TA* hud)
 	}
 
 	// first reset all pri rows to their default titles
-	for (auto pri : hud->PRIData)
+	for (auto* pri : hud->PRIData)
 	{
 		if (!validUObject(pri))
 			continue;
@@ -259,7 +258,7 @@ void TitlesComponent::refreshPriTitlePresets(AGFxHUD_TA* hud)
 			return;
 
 		// loop thru pris and apply custom title presets to the matching pridatas in m_ingameCustomPresets
-		for (auto pri : hud->PRIData)
+		for (auto* pri : hud->PRIData)
 		{
 			if (!pri)
 				continue;
@@ -273,7 +272,7 @@ void TitlesComponent::refreshPriTitlePresets(AGFxHUD_TA* hud)
 	};
 
 	// lil 0.1s delay to allow side effect functions from HandleTitleChanged to finish executing
-	DELAY_CAPTURE(0.1f, applyExistingPresetsToPris();, applyExistingPresetsToPris);
+	DELAY(0.1f, { applyExistingPresetsToPris(); }, applyExistingPresetsToPris);
 }
 
 TitleAppearance* TitlesComponent::getActivePreset()
@@ -302,7 +301,7 @@ void TitlesComponent::applySelectedAppearanceToUser()
 	applyPresetToBanner(*title);
 
 	// apply to pri (in-game)
-	auto pri = getUserGFxPRI();
+	auto* pri = getUserGFxPRI();
 	if (!pri)
 		return;
 
@@ -316,7 +315,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 
 	if (!validUObject(caller) || !caller->IsA<AGFxHUD_TA>())
 		return;
-	auto hud = static_cast<AGFxHUD_TA*>(caller);
+	auto* hud = static_cast<AGFxHUD_TA*>(caller);
 
 	if (!*m_showOtherPlayerTitles)
 		return;
@@ -331,7 +330,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 		return;
 #endif
 
-	auto gfxPri = getGFxPriFromChatData(msg.PRI, hud);
+	auto* gfxPri = getGFxPriFromChatData(msg.PRI, hud);
 	if (!gfxPri)
 		return;
 
@@ -363,21 +362,32 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 			    appearance; // bc capture variables are const references i think, and we want non-const so we can call setText(...)
 			title.setText(result);
 
-			GAME_THREAD_EXECUTE_CAPTURE(if (!gfxPri) return;
+			GAME_THREAD_EXECUTE(
+			    {
+				    if (!gfxPri)
+					    return;
 
-			    LOG("Censored title text for {}: \"{}\" ---> \"{}\"",
-			        senderName,
-			        Format::EscapeBraces(oldText),
-			        Format::EscapeBraces(title.getText()));
+				    LOG("Censored title text for {}: \"{}\" ---> \"{}\"",
+				        senderName,
+				        Format::EscapeBraces(oldText),
+				        Format::EscapeBraces(title.getText()));
 
-			    m_ingameCustomPresets[gfxPri] = title;
-			    refreshPriTitlePresets(hud);
-			    // applyPresetToPri(gfxPri, title);
+				    m_ingameCustomPresets[gfxPri] = title;
+				    refreshPriTitlePresets(hud);
+				    // applyPresetToPri(gfxPri, title);
 
-			    LOG(successMsg);
-			    if (*m_notifyWhenApplyingOthersTitle) Instances.SpawnNotification("custom title", successMsg, 3, true);
+				    LOG(successMsg);
+				    if (*m_notifyWhenApplyingOthersTitle)
+					    Instances.SpawnNotification("custom title", successMsg, 3, true);
+			    }
 
-			    , gfxPri, oldText, title, senderName, successMsg, hud);
+			    ,
+			    gfxPri,
+			    oldText,
+			    title,
+			    senderName,
+			    successMsg,
+			    hud);
 		};
 
 		HttpWrapper::SendCurlRequest(req, responseCallback);
@@ -484,7 +494,7 @@ bool TitlesComponent::spawn(const FString& spawn_id, bool animation, const std::
 	LOG("animation: {}", animation);
 	if (!animation)
 	{
-		auto noNotify = Instances.GetDefaultInstanceOf<UProductAttribute_NoNotify_TA>();
+		auto* noNotify = Instances.GetDefaultInstanceOf<UProductAttribute_NoNotify_TA>();
 		if (noNotify)
 		{
 			attributes.push_back(noNotify->InstanceOnlineProductAttribute());
@@ -544,9 +554,7 @@ void TitlesComponent::writePresetsToJson(bool notification) const
 	j["presets"] = json::array();
 
 	for (const auto& preset : m_titlePresets)
-	{
 		j["presets"].push_back(preset.toJson());
-	}
 
 	j["activePresetIndex"] = m_activePresetIndex;
 
@@ -558,9 +566,7 @@ void TitlesComponent::writePresetsToJson(bool notification) const
 	LOG(msg);
 
 	if (notification)
-	{
-		GAME_THREAD_EXECUTE_CAPTURE(Instances.SpawnNotification("custom title", msg, 3.0f, true);, msg);
-	}
+		GAME_THREAD_EXECUTE({ Instances.SpawnNotification("custom title", msg, 3.0f, true); }, msg);
 }
 
 void TitlesComponent::addPresetsFromJson()
@@ -617,14 +623,14 @@ FPlayerTitleData& TitlesComponent::getTitleFromConfig(int index, UTitleConfig_X*
 
 AGFxHUD_TA* TitlesComponent::getGFxHUD()
 {
-	auto lp = Instances.IULocalPlayer();
+	auto* lp = Instances.IULocalPlayer();
 	if (!validUObject(lp))
 	{
 		LOG("ERROR: Instances.IULocalPlayer() is null");
 		return nullptr;
 	}
 
-	auto pc = lp->Actor;
+	auto* pc = lp->Actor;
 	if (!validUObject(pc))
 	{
 		LOG("ERROR: lp->Actor is null");
@@ -643,7 +649,7 @@ AGFxHUD_TA* TitlesComponent::getGFxHUD()
 
 UGFxData_PRI_TA* TitlesComponent::getUserGFxPRI()
 {
-	auto gfxHud = getGFxHUD();
+	auto* gfxHud = getGFxHUD();
 	if (!gfxHud)
 		return nullptr;
 
@@ -657,7 +663,7 @@ UGFxData_PRI_TA* TitlesComponent::getUserGFxPRI()
 	if (idx >= gfxHud->PRIData.size())
 		return nullptr;
 
-	auto userGfxPri = gfxHud->PRIData.at(idx);
+	auto* userGfxPri = gfxHud->PRIData.at(idx);
 	if (!validUObject(userGfxPri))
 		return nullptr;
 
@@ -685,8 +691,8 @@ UGFxData_PRI_TA* TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo* 
 		return nullptr;
 	}
 
-	auto pri = static_cast<APRI_TA*>(priBase);
-	auto hud = static_cast<AGFxHUD_TA*>(hudBase);
+	auto* pri = static_cast<APRI_TA*>(priBase);
+	auto* hud = static_cast<AGFxHUD_TA*>(hudBase);
 
 	auto gfxPriIndex = hud->GetPRIDataIndex(pri);
 	if (gfxPriIndex >= hud->PRIData.size())
@@ -695,7 +701,7 @@ UGFxData_PRI_TA* TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo* 
 		return nullptr;
 	}
 
-	auto gfxPri = hud->PRIData.at(gfxPriIndex);
+	auto* gfxPri = hud->PRIData.at(gfxPriIndex);
 	if (!validUObject(gfxPri))
 		return nullptr;
 
@@ -726,7 +732,7 @@ void TitlesComponent::applyPresetToBanner(const TitleAppearance& title, UGFxData
 	}
 
 	GfxWrapper ptGfx{pt};
-	auto       ds = ptGfx.get_datastore();
+	auto*      ds = ptGfx.get_datastore();
 	if (!validUObject(ds))
 		return;
 
@@ -745,7 +751,7 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance& appearance, APlay
 {
 	if (!pc)
 	{
-		auto lp = Instances.IULocalPlayer();
+		auto* lp = Instances.IULocalPlayer();
 		if (!lp)
 		{
 			LOG("ERROR: Instances.IULocalPlayer() is null");
@@ -760,7 +766,7 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance& appearance, APlay
 		pc = lp->Actor;
 	}
 
-	auto pcTA = static_cast<APlayerController_TA*>(pc);
+	auto* pcTA = static_cast<APlayerController_TA*>(pc);
 
 	std::string titleDataStr = appearance.toEncodedString();
 
@@ -824,8 +830,10 @@ void TitlesComponent::display_titlePresetList()
 			if (ImGui::Selectable(appearancePreset.m_text.c_str(), m_activePresetIndex == i))
 			{
 				m_activePresetIndex = i;
-				GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(); writePresetsToJson(false); // to save the active preset index
-				);
+				GAME_THREAD_EXECUTE({
+					applySelectedAppearanceToUser();
+					writePresetsToJson(false); // to save the active preset index
+				});
 			}
 
 			ImGui::PopStyleColor();
@@ -839,9 +847,10 @@ void TitlesComponent::display_titlePresetList()
 
 		if (ImGui::Button("Add New Preset", ImGui::GetContentRegionAvail()))
 		{
-			GAME_THREAD_EXECUTE(addNewPreset();
-			    // writePresetsToJson();
-			);
+			GAME_THREAD_EXECUTE({
+				addNewPreset();
+				// writePresetsToJson();
+			});
 		}
 	}
 }
@@ -855,15 +864,24 @@ void TitlesComponent::display_titlePresetInfo()
 	{
 		GUI::ScopedChild c{"PrestInfo", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.8f)};
 
+		if (!m_selectedTitleId.empty())
+		{
+			ImGui::TextColored(GUI::Colors::LightGreen, "Equipped title: ");
+			ImGui::SameLine();
+			ImGui::Text("%s", m_selectedTitleId.c_str());
+			GUI::ToolTip("The ID of your real title\n\n(aka what's beneath the custom appearance)");
+			ImGui::Separator();
+
+			GUI::Spacing(4);
+		}
+
 		if (m_titlePresets.empty())
 		{
 			ImGui::Text("Add a title preset....");
 			return;
 		}
 		if (m_activePresetIndex >= m_titlePresets.size())
-		{
 			m_activePresetIndex = 0;
-		}
 
 		TitleAppearance& appearance = m_titlePresets[m_activePresetIndex];
 
@@ -880,7 +898,7 @@ void TitlesComponent::display_titlePresetInfo()
 		{
 			appearance.m_text = textBuffer;
 
-			GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+			GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 		}
 
 		GUI::Spacing(4);
@@ -891,7 +909,7 @@ void TitlesComponent::display_titlePresetInfo()
 			{
 				appearance.setGlowColor(appearance.m_textColor);
 
-				GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 			}
 		}
 
@@ -907,7 +925,7 @@ void TitlesComponent::display_titlePresetInfo()
 				appearance.setTextColor(color);
 				appearance.setGlowColor(color);
 
-				GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 			}
 		}
 		else
@@ -919,8 +937,7 @@ void TitlesComponent::display_titlePresetInfo()
 			if (ImGui::ColorEdit4("Text color", &textCol[0], colorEditFlags))
 			{
 				appearance.setTextColor(textCol);
-
-				GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 			}
 
 			GUI::Spacing(2);
@@ -932,8 +949,7 @@ void TitlesComponent::display_titlePresetInfo()
 			if (ImGui::ColorEdit4("Glow color", &glowCol[0], colorEditFlags))
 			{
 				appearance.setGlowColor(glowCol);
-
-				GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 			}
 		}
 
@@ -945,8 +961,10 @@ void TitlesComponent::display_titlePresetInfo()
 
 		if (ImGui::Button("Refresh"))
 		{
-			GAME_THREAD_EXECUTE(updateGameTitleAppearances(nullptr, true);
-			    Instances.SpawnNotification("custom title", "Updated game title presets", 3););
+			GAME_THREAD_EXECUTE({
+				updateGameTitleAppearances(nullptr, true);
+				Instances.SpawnNotification("custom title", "Updated game title presets", 3);
+			});
 		}
 
 		ImGui::Text("%zu title presets", m_gameTitles.size());
@@ -961,12 +979,13 @@ void TitlesComponent::display_titlePresetInfo()
 			GUI::ScopedChild c{"SpawnButton", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.5f)};
 
 			if (ImGui::Button("Spawn", ImGui::GetContentRegionAvail()))
-			{
-				_globalCvarManager->executeCommand(Commands::spawnCustomTitle
-				        .name); // <--- i thought executeCommand is supposed to always run in game thread, ig we'll see...
-			}
+				_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
 			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("Press \"OK\" at the spawn prompt. Pressing \"EQUIP NOW\" can cause buggy behavior.");
+			{
+				ImGui::SetTooltip("Press \"OK\" at the spawn prompt. Pressing \"EQUIP NOW\" can cause buggy behavior.\n\n"
+				                  "TIP: Bind this command to spawn titles with a keypress: %s",
+				    Commands::spawnCustomTitle.name);
+			}
 		}
 
 		{
@@ -977,7 +996,7 @@ void TitlesComponent::display_titlePresetInfo()
 
 				if (ImGui::Button("Save", ImGui::GetContentRegionAvail()))
 				{
-					GAME_THREAD_EXECUTE(writePresetsToJson(););
+					GAME_THREAD_EXECUTE({ writePresetsToJson(); });
 				}
 			}
 
@@ -992,9 +1011,11 @@ void TitlesComponent::display_titlePresetInfo()
 
 				if (ImGui::Button("Delete Preset", ImGui::GetContentRegionAvail()))
 				{
-					GAME_THREAD_EXECUTE(deletePreset(m_activePresetIndex); // <--- index param may not be necessary (bc the index would
-					                                                       // always just be m_activePresetIndex)
-					    writePresetsToJson(false););
+					GAME_THREAD_EXECUTE({
+						deletePreset(m_activePresetIndex); // <--- index param may not be necessary (bc the index would
+						                                   // always just be m_activePresetIndex)
+						writePresetsToJson(false);
+					});
 				}
 
 				ImGui::PopStyleColor(3);
@@ -1034,7 +1055,7 @@ void TitlesComponent::display_gameTitlesDropdown()
 				if (ImGui::Selectable(titleText.c_str(), titleText == currentTitleText))
 				{
 					*currentTitle = title;
-					GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 				}
 
 				ImGui::PopStyleColor();
@@ -1046,7 +1067,7 @@ void TitlesComponent::display_gameTitlesDropdown()
 				if (ImGui::Selectable(titleText.c_str(), titleText == currentTitleText))
 				{
 					*currentTitle = title;
-					GAME_THREAD_EXECUTE(applySelectedAppearanceToUser(););
+					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 				}
 
 				ImGui::PopStyleColor();

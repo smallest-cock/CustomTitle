@@ -19,7 +19,7 @@ void CustomTitle::RenderSettings()
 		// open bindings window button
 		std::string openMenuCommand = "togglemenu " + GetMenuName();
 		if (ImGui::Button("Open Menu"))
-			GAME_THREAD_EXECUTE_CAPTURE(cvarManager->executeCommand(openMenuCommand);, openMenuCommand);
+			GAME_THREAD_EXECUTE({ cvarManager->executeCommand(openMenuCommand); }, openMenuCommand);
 
 		GUI::Spacing(8);
 
@@ -63,36 +63,8 @@ void CustomTitle::RenderWindow()
 
 		if (ImGui::BeginTabItem("Info"))
 		{
-			GUI::Spacing(2);
-
-			ImGui::TextColored(GUI::Colors::Yellow, "Important plugin info:");
-
-			GUI::Spacing(4);
-
-			ImGui::TextColored(GUI::Colors::BlueGreen, "This mod simply alters the appearance of your equipped title (client-side)");
-			ImGui::BulletText("It doesn't create new titles");
-			ImGui::BulletText("It doesn't give you more titles than you already own");
-
-			GUI::Spacing(2);
-
-			ImGui::TextColored(
-			    GUI::Colors::BlueGreen, "The presets exist as a way for you to save your designs and easily switch between them");
-			ImGui::BulletText("You can think of it like applying different decals (presets) to a single car (your equipped title)");
-
-			GUI::Spacing(2);
-
-			ImGui::TextColored(
-			    GUI::Colors::BlueGreen, "The \"Spawn\" button is just a fun visual effect. It doesn't actually give you the title");
-			ImGui::BulletText("You should always press \"OK\" after spawning a title (not \"EQUIP NOW\") to avoid buggy behavior");
-			ImGui::BulletText(
-			    "You may notice 2 \"custom\" titles in your inventory after pressing the spawn button. Don't try to equip them.\n"
-			    "One is your currently equipped title (with the custom appearance applied), the other is a fake dummy title\n"
-			    "that was used to create the spawn effect. Equipping the dummy title may cause buggy behavior.");
-
-			GUI::Spacing(8);
-
-			GUI::centerTextColoredX(GUI::Colors::VividOrange, "This plugin is incompatible with AlphaConsole's title feature.");
-			GUI::centerTextColoredX(GUI::Colors::VividOrange, "Make sure that feature is disabled if you have AlphaConsole installed.");
+			Info_Tab();
+			ImGui::EndTabItem();
 		}
 
 		ImGui::EndTabBar();
@@ -156,4 +128,35 @@ void CustomTitle::TourneyIcons_Tab()
 	GUI::Spacing(2);
 
 	Textures.display_iconCustomizations();
+}
+
+void CustomTitle::Info_Tab()
+{
+	GUI::Spacing(2);
+
+	ImGui::TextColored(GUI::Colors::Yellow, "Important plugin info:");
+
+	GUI::Spacing(4);
+
+	ImGui::TextColored(GUI::Colors::LightGreen, "This mod simply alters the appearance of your equipped title (client-side)");
+	ImGui::BulletText("It doesn't create new titles");
+	ImGui::BulletText("It doesn't give you more titles than you already own");
+
+	GUI::Spacing(2);
+
+	ImGui::TextColored(GUI::Colors::LightGreen, "The presets exist as a way for you to save your designs and easily switch between them");
+	ImGui::BulletText("You can think of it like applying different decals (presets) to a single car (your equipped title)");
+
+	GUI::Spacing(2);
+
+	ImGui::TextColored(GUI::Colors::LightGreen, "The \"Spawn\" button is just a fun visual effect. It doesn't actually give you a title");
+	ImGui::BulletText("Always press OK after spawning a title (not EQUIP NOW) to avoid buggy behavior");
+	ImGui::BulletText("You may notice 2 \"custom\" titles in your inventory after pressing the spawn button. Don't try to equip them.\n"
+	                  "One is your currently equipped title (with the custom appearance applied), the other is a fake dummy title\n"
+	                  "that was used to create the spawn effect. Equipping the dummy title can cause buggy behavior.");
+
+	GUI::Spacing(8);
+
+	GUI::centerTextColoredX(GUI::Colors::Orange, "This plugin is incompatible with AlphaConsole's custom title feature.");
+	GUI::centerTextColoredX(GUI::Colors::Orange, "Make sure to disable it (dont have text in it) if you're using AlphaConsole.");
 }

@@ -1,12 +1,10 @@
 #include "pch.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "Textures.hpp"
+#include "Instances.hpp"
+#include "Macros.hpp"
 
-
-void IconCustomizationState::constructTextureName()
-{
-	textureName = texNamePrefix + Format::toCamelCase(iconName);
-}
+void IconCustomizationState::constructTextureName() { textureName = texNamePrefix + Format::toCamelCase(iconName); }
 
 void IconCustomizationState::fromJson(const json& data)
 {
@@ -19,7 +17,7 @@ void IconCustomizationState::fromJson(const json& data)
 	iconName = data.at("iconName").get<std::string>();
 	if (data.contains("imagePath"))
 	{
-		fs::path imgPath{ data.at("imagePath").get<std::string>() };
+		fs::path imgPath{data.at("imagePath").get<std::string>()};
 		if (fs::exists(imgPath))
 			imagePath = imgPath;
 		else
@@ -34,10 +32,7 @@ void IconCustomizationState::fromJson(const json& data)
 
 json IconCustomizationState::toJson() const
 {
-	json j = {
-		{"iconName", iconName},
-		{"enabled", enabled}
-	};
+	json j = {{"iconName", iconName}, {"enabled", enabled}};
 
 	if (!imagePath.empty())
 	{
@@ -47,14 +42,9 @@ json IconCustomizationState::toJson() const
 	return j;
 }
 
-
-
 // ##############################################################################################################
 // ################################################    INIT    ##################################################
 // ##############################################################################################################
-
-TexturesComponent::TexturesComponent() {}
-TexturesComponent::~TexturesComponent() {}
 
 void TexturesComponent::Initialize(std::shared_ptr<GameWrapper> gw)
 {
@@ -101,11 +91,7 @@ void TexturesComponent::findImages(bool notification)
 	LOG(logMsg);
 
 	if (notification)
-	{
-		GAME_THREAD_EXECUTE_CAPTURE(
-			Instances.SpawnNotification("custom title", logMsg, 3);
-		, logMsg);
-	}
+		GAME_THREAD_EXECUTE({ Instances.SpawnNotification("custom title", logMsg, 3); }, logMsg);
 }
 
 void TexturesComponent::initIconCustomizations()
@@ -126,7 +112,7 @@ void TexturesComponent::applyAllIconCustomizations()
 			continue;
 
 		const std::string currentImgFilename = state.imagePath.filename().string();
-		auto it = m_images.find(currentImgFilename);
+		auto              it                 = m_images.find(currentImgFilename);
 		if (it == m_images.end())
 			continue;
 
@@ -146,32 +132,30 @@ void TexturesComponent::restoreAllIconsToOriginals()
 	}
 }
 
-
-
 // ##############################################################################################################
 // ###########################################    FUNCTIONS    ##################################################
 // ##############################################################################################################
 
 /*
-	Assuming the json is structured like this:
+    Assuming the json is structured like this:
 
-	[
-	  {
-		"iconName": "Bronze",
-	    "enabled": true,
-	    "imagePath": "/path/to/bronze_image.png"
-	  },
-	  {
-		"iconName": "Silver",
-	    "enabled": false,
-	  },
-	  {
-		"iconName": "Gold",
-	    "enabled": true,
-	    "imagePath": "/path/to/gold_image.png"
-	  },
-	  ...
-	]
+    [
+      {
+        "iconName": "Bronze",
+        "enabled": true,
+        "imagePath": "/path/to/bronze_image.png"
+      },
+      {
+        "iconName": "Silver",
+        "enabled": false,
+      },
+      {
+        "iconName": "Gold",
+        "enabled": true,
+        "imagePath": "/path/to/gold_image.png"
+      },
+      ...
+    ]
 */
 void TexturesComponent::updateCustomizationsFromJson()
 {
@@ -190,7 +174,7 @@ void TexturesComponent::updateCustomizationsFromJson()
 		return;
 	}
 
-	 // Iterate through the JSON array and populate the customizations
+	// Iterate through the JSON array and populate the customizations
 	for (size_t i = 0; i < m_iconCustomizations.size(); ++i)
 	{
 		auto& customization = m_iconCustomizations[i];
@@ -218,11 +202,11 @@ void TexturesComponent::writeCustomizationsToJson(bool notification) const
 
 	Files::write_json(m_iconCustomizationsJson, data);
 
-	if (notification) 
+	if (notification)
 	{
-		GAME_THREAD_EXECUTE(
+		GAME_THREAD_EXECUTE({
 			Instances.SpawnNotification("custom title", std::format("Updated \"{}\"", m_iconCustomizationsJson.filename().string()), 3);
-		);
+		});
 	}
 }
 
@@ -286,7 +270,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const Microsof
 	}
 
 	// backup original texture before we overwrite it
-	ID3D11Texture2D* backupTexture = nullptr;
+	ID3D11Texture2D*     backupTexture = nullptr;
 	D3D11_TEXTURE2D_DESC desc;
 	targetDxTex->GetDesc(&desc);
 
@@ -307,12 +291,13 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const Microsof
 	Dx11Data::pd3dDeviceContext->CopyResource(targetDxTex, newTex);
 }
 
-
 bool InitializeScratchImageFromImage(const DirectX::Image& srcImage, DirectX::ScratchImage& scratch)
 {
-	HRESULT hr = scratch.Initialize2D(srcImage.format, srcImage.width, srcImage.height,
-	                                  1, // array size
-	                                  1  // mip levels
+	HRESULT hr = scratch.Initialize2D(srcImage.format,
+	    srcImage.width,
+	    srcImage.height,
+	    1, // array size
+	    1  // mip levels
 	);
 
 	if (FAILED(hr))
@@ -360,9 +345,11 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	D3D11_TEXTURE2D_DESC originalDesc;
 	targetDxTex->GetDesc(&originalDesc);
 	DXGI_FORMAT originalFormat = originalDesc.Format;
-	uint32_t ogFormatInt       = static_cast<uint32_t>(originalFormat);
+	uint32_t    ogFormatInt    = static_cast<uint32_t>(originalFormat);
 	LOG("Original texture format: {} (Compressed: {}, SRGB: {})",
-		ogFormatInt, DirectX::IsCompressed(originalFormat), DirectX::IsSRGB(originalFormat));
+	    ogFormatInt,
+	    DirectX::IsCompressed(originalFormat),
+	    DirectX::IsSRGB(originalFormat));
 
 	// Prepare new DirectXTex Image
 	DirectX::Image customImageSource = {};
@@ -379,19 +366,20 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 
 	HRESULT hr;
 
-
 	// ################################################################################
 	// ########################### STEP 1: RESIZE (IF NEEDED) #########################
 	// ################################################################################
 
 	if (customImageSource.width != originalDesc.Width || customImageSource.height != originalDesc.Height)
 	{
-		LOG("Custom image dimensions dont match original texture. Resizing {}x{} --> {}x{}", customImageSource.width,
-		    customImageSource.height, originalDesc.Width, originalDesc.Height);
+		LOG("Custom image dimensions dont match original texture. Resizing {}x{} --> {}x{}",
+		    customImageSource.width,
+		    customImageSource.height,
+		    originalDesc.Width,
+		    originalDesc.Height);
 
 		DirectX::ScratchImage resizedImage;
-		hr = DirectX::Resize(customImageSource, originalDesc.Width, originalDesc.Height, DirectX::TEX_FILTER_DEFAULT,
-		                     resizedImage);
+		hr = DirectX::Resize(customImageSource, originalDesc.Width, originalDesc.Height, DirectX::TEX_FILTER_DEFAULT, resizedImage);
 		if (FAILED(hr))
 		{
 			LOG("ERROR: Failed to resize image (HRESULT: {})", Format::ToHexString(hr));
@@ -400,18 +388,18 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 		processedImage = std::move(resizedImage);
 
 		const DirectX::TexMetadata& processedImgData = processedImage.GetMetadata();
-		LOG("New custom image dimensions: {}x{} .... matches original: {}", processedImgData.width,
+		LOG("New custom image dimensions: {}x{} .... matches original: {}",
+		    processedImgData.width,
 		    processedImgData.height,
 		    processedImgData.width == originalDesc.Width && processedImgData.height == originalDesc.Height);
 	}
-
 
 	// ################################################################################
 	// ################## STEP 2: COMPRESS TO MATCH ORIGINAL FORMAT ###################
 	// ################################################################################
 
 	LOG("Compressing custom texture to match DGXI format {}...", ogFormatInt);
-	
+
 	const DirectX::TexMetadata& processedImgData = processedImage.GetMetadata();
 	if (processedImgData.width % 4 != 0 || processedImgData.height % 4 != 0)
 		LOG("WARNING: Custom image dimensions are not multiples of 4. BC compression might be fricked");
@@ -424,8 +412,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	}
 
 	DirectX::ScratchImage compressedImage;
-	hr = DirectX::Compress(*processedImg, originalFormat, DirectX::TEX_COMPRESS_DEFAULT,
-	                       DirectX::TEX_THRESHOLD_DEFAULT, compressedImage);
+	hr = DirectX::Compress(*processedImg, originalFormat, DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedImage);
 	if (FAILED(hr))
 	{
 		LOG("ERROR: Compression failed (HRESULT: {})", Format::ToHexString(hr));
@@ -434,28 +421,32 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 
 	processedImage = std::move(compressedImage);
 	LOG("Compressed custom image to DXGI format {} to match original. Matches original format: {}",
-	    (uint32_t)processedImage.GetMetadata().format, (uint32_t)processedImage.GetMetadata().format == originalFormat);
+	    (uint32_t)processedImage.GetMetadata().format,
+	    (uint32_t)processedImage.GetMetadata().format == originalFormat);
 
 	// sanity checks
 	auto& finalProcessedImgData = processedImage.GetMetadata();
 	if (finalProcessedImgData.width != originalDesc.Width || finalProcessedImgData.height != originalDesc.Height)
 	{
 		LOG("WARNING: Final custom image dimensions don't match original texture: {}x{} != {}x{}",
-		    finalProcessedImgData.width, finalProcessedImgData.height, originalDesc.Width, originalDesc.Height);
+		    finalProcessedImgData.width,
+		    finalProcessedImgData.height,
+		    originalDesc.Width,
+		    originalDesc.Height);
 	}
 	if (finalProcessedImgData.format != originalFormat)
 	{
 		LOG("WARNING: Final custom image format doesn't match original texture: {} != {}",
-		    (uint32_t)finalProcessedImgData.format, ogFormatInt);
+		    (uint32_t)finalProcessedImgData.format,
+		    ogFormatInt);
 	}
-
 
 	// ################################################################################
 	// ######### STEP 3: CREATE NEW GPU TEXTURE AND COPY RESOURCE TO ORIGINAL #########
 	// ################################################################################
 
-	ID3D11Texture2D* newTexture = nullptr;
-	D3D11_TEXTURE2D_DESC newDesc = originalDesc;
+	ID3D11Texture2D*     newTexture = nullptr;
+	D3D11_TEXTURE2D_DESC newDesc    = originalDesc;
 
 	newDesc.Format         = finalProcessedImgData.format;
 	newDesc.Usage          = D3D11_USAGE_DEFAULT;
@@ -469,9 +460,9 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	LOG("Final processed DXGI format: {}", (uint32_t)finalImage->format);
 
 	D3D11_SUBRESOURCE_DATA initData{};
-	initData.pSysMem                = finalImage->pixels;
-	initData.SysMemPitch            = finalImage->rowPitch;
-	initData.SysMemSlicePitch       = finalImage->slicePitch;
+	initData.pSysMem          = finalImage->pixels;
+	initData.SysMemPitch      = finalImage->rowPitch;
+	initData.SysMemSlicePitch = finalImage->slicePitch;
 
 	hr = Dx11Data::pd3dDevice->CreateTexture2D(&newDesc, &initData, &newTexture);
 	if (FAILED(hr))
@@ -485,7 +476,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	LOG("Cached custom GPU texture for \"{}\"", path.filename().string());
 
 	// backup original texture before we overwrite it
-	ID3D11Texture2D* backupTexture = nullptr;
+	ID3D11Texture2D*     backupTexture = nullptr;
 	D3D11_TEXTURE2D_DESC desc;
 	targetDxTex->GetDesc(&desc);
 
@@ -517,7 +508,7 @@ bool TexturesComponent::createImageDataFromPath(const fs::path& imgPath, CustomI
 		return false;
 	}
 
-	int width, height, channels;
+	int      width, height, channels;
 	stbi_uc* imagePixelData = stbi_load(imgPath.string().c_str(), &width, &height, &channels, 4); // Force 4 channels
 	if (!imagePixelData)
 	{
@@ -528,17 +519,14 @@ bool TexturesComponent::createImageDataFromPath(const fs::path& imgPath, CustomI
 
 	// set data
 	outData.pixelData.reset(imagePixelData);
-	outData.width     = width;
-	outData.height    = height;
-	outData.channels  = channels;
+	outData.width    = width;
+	outData.height   = height;
+	outData.channels = channels;
 
-	LOG("Loaded {}x{} image ({} bytes) from \"{}\"", width, height, (numPixels * channels),
-	    imgPath.filename().string());
+	LOG("Loaded {}x{} image ({} bytes) from \"{}\"", width, height, (numPixels * channels), imgPath.filename().string());
 
 	return true;
 }
-
-
 
 // ##############################################################################################################
 // ########################################    STATIC FUNCTIONS    ##############################################
@@ -591,22 +579,20 @@ ID3D11ShaderResourceView* TexturesComponent::getDxSRV(UTexture* tex)
 	return dxTexData->View;
 }
 
-
-
 // ##############################################################################################################
 // #########################################    DISPLAY FUNCTIONS    ############################################
 // ##############################################################################################################
 
 void TexturesComponent::display_iconCustomizations()
 {
-	if (ImGui::Button("Open TitleIcons folder")) 
+	if (ImGui::Button("Open TitleIcons folder"))
 		Files::OpenFolder(m_titleIconsFolder);
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Default icon size is 72x72 pixels");
 
 	GUI::Spacing(2);
 
-	ImGui::Text("%i valid images found", m_images.size());
+	ImGui::Text("%zu valid images found", m_images.size());
 
 	GUI::SameLineSpacing_relative(20);
 
@@ -625,52 +611,51 @@ void TexturesComponent::display_iconCustomizations()
 
 	for (auto& iconCustomization : m_iconCustomizations)
 	{
-		GUI::ScopedID id{ &iconCustomization };
+		GUI::ScopedID id{&iconCustomization};
 
 		ImGui::TextUnformatted(iconCustomization.iconName.c_str());
 		GUI::SameLineSpacing_absolute(start + SAMELINE_DROPDOWN_SPACING);
 		display_iconCustomizationDropdown(iconCustomization, imgOptions);
 	}
 
-/*
-	// debug
-	GUI::Spacing(4);
+	/*
+	    // debug
+	    GUI::Spacing(4);
 
-	if (ImGui::CollapsingHeader("Debug"))
-	{
-		ImGui::Text("m_loadedCustomTextures size: %i", m_loadedCustomTextures.size());
-		for (const auto& [path, comptr] : m_loadedCustomTextures)
-		{
-			ImGui::BulletText("%s\t-->\t%s", path.filename().string().c_str(),
-			                  Format::ToHexString(comptr.Get()).c_str());
-		}
+	    if (ImGui::CollapsingHeader("Debug"))
+	    {
+	        ImGui::Text("m_loadedCustomTextures size: %i", m_loadedCustomTextures.size());
+	        for (const auto& [path, comptr] : m_loadedCustomTextures)
+	        {
+	            ImGui::BulletText("%s\t-->\t%s", path.filename().string().c_str(),
+	                              Format::ToHexString(comptr.Get()).c_str());
+	        }
 
-		ImGui::Text("m_originalTextureBackups size: %i", m_originalTextureBackups.size());
-		for (const auto& [tex, comptr] : m_originalTextureBackups)
-		{
-			if (!tex || tex->ObjectFlags & RF_BadObjectFlags)
-			{
-				ImGui::BulletText("INVALID OBJECT");
-				continue;
-			}
+	        ImGui::Text("m_originalTextureBackups size: %i", m_originalTextureBackups.size());
+	        for (const auto& [tex, comptr] : m_originalTextureBackups)
+	        {
+	            if (!tex || tex->ObjectFlags & RF_BadObjectFlags)
+	            {
+	                ImGui::BulletText("INVALID OBJECT");
+	                continue;
+	            }
 
-			ImGui::BulletText("%s\t-->\t%s", tex->GetName().c_str(),
-			                  Format::ToHexString(comptr.Get()).c_str());
-		}
-	}
-*/
+	            ImGui::BulletText("%s\t-->\t%s", tex->GetName().c_str(),
+	                              Format::ToHexString(comptr.Get()).c_str());
+	        }
+	    }
+	*/
 }
 
-void TexturesComponent::display_iconCustomizationDropdown(IconCustomizationState& state,
-                                                          const std::vector<std::string>& options)
+void TexturesComponent::display_iconCustomizationDropdown(IconCustomizationState& state, const std::vector<std::string>& options)
 {
 	const std::string currentImgFilename = state.imagePath.empty() ? "" : state.imagePath.filename().string();
 	if (ImGui::BeginCombo("##icon_dropdown", currentImgFilename.c_str()))
 	{
 		for (const auto& imgOption : options)
 		{
-			GUI::ScopedID id{ &imgOption };
-			
+			GUI::ScopedID id{&imgOption};
+
 			if (ImGui::Selectable(imgOption.c_str(), currentImgFilename == (imgOption == "None" ? "" : imgOption)))
 			{
 				if (imgOption == "None")
@@ -699,14 +684,11 @@ void TexturesComponent::display_iconCustomizationDropdown(IconCustomizationState
 	}
 }
 
-
-class TexturesComponent Textures {};
-
-
+class TexturesComponent Textures{};
 
 namespace Dx11Data
 {
-ID3D11Device* pd3dDevice               = nullptr;
+ID3D11Device*        pd3dDevice        = nullptr;
 ID3D11DeviceContext* pd3dDeviceContext = nullptr;
 
 typedef HRESULT(__stdcall* PresentFn)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);

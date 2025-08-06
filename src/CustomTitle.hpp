@@ -53,6 +53,7 @@ private:
 	void TitlePresets_Tab();
 	void TourneyIcons_Tab();
 	void Settings_Tab();
+	void Info_Tab();
 
 	// header/footer stuff
 	static constexpr float header_height = 80.0f;

@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.9
+- Added an Info tab in settings to give info about how the plugin works
+- Added the currently equipped title ID in the Presets tab
+
 ## v1.0.8
 - Fixed crashes when applying custom icons (due to an outdated SDK)
 
