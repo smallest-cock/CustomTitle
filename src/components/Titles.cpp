@@ -45,12 +45,58 @@ void TitlesComponent::setFilePaths()
 
 void TitlesComponent::hookFunctions()
 {
+	hookWithCaller(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
+	    [this](ActorWrapper Caller, void* Params, ...)
+	    {
+		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
+		    if (!caller)
+			    return;
+
+		    auto* params = reinterpret_cast<UGFxData_PlayerTitles_TA_execUpdateSelectedTitle_Params*>(Params);
+		    if (!params)
+			    return;
+
+		    // undo custom appearance on current title before we equip a different one
+		    applyPresetToBanner(m_currentOgAppearance);
+		    LOG("Undid customization on old equipped title...");
+	    });
+
 	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
-	    std::bind(&TitlesComponent::event_GFxData_PlayerTitles_TA_UpdateSelectedTitle,
-	        this,
-	        std::placeholders::_1,
-	        std::placeholders::_2,
-	        std::placeholders::_3));
+	    [this](ActorWrapper Caller, void* Params, ...)
+	    {
+		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
+		    if (!caller)
+			    return;
+
+		    auto* params = reinterpret_cast<UGFxData_PlayerTitles_TA_execUpdateSelectedTitle_Params*>(Params);
+		    if (!params)
+			    return;
+
+		    // update stored OG appearance for current title
+		    int32_t idFnameIdx = params->Title.GetDisplayIndex();
+		    for (const auto& title : m_gameTitles)
+		    {
+			    if (title.idFnameEntry != idFnameIdx)
+				    continue;
+
+			    m_currentOgAppearance = static_cast<TitleAppearance>(title);
+			    break;
+		    }
+
+		    m_selectedTitleId = params->Title.ToString();
+		    LOG("Updated m_selectedTitleId: \"{}\"", m_selectedTitleId);
+
+		    // here we only apply the active preset to banner, bc pretty sure UpdateSelectedTitle wont be called anywhere except main menu
+		    TitleAppearance* title = getActivePreset();
+		    if (!title)
+			    return;
+		    applyPresetToBanner(*title);
+
+		    // this bool exists so we only modify FPlayerTitleData of our equipped title if user has just selected it via the title picker
+		    // bc we dont wanna overwrite EVERY FPlayerTitleData that's requested by the game... bc it could be for diff players too (idk)
+		    m_shouldOverwriteGetTitleDataReturnVal = true;
+		    LOG("Set m_shouldOverwriteGetTitleDataReturnVal: {}", m_shouldOverwriteGetTitleDataReturnVal);
+	    });
 
 	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_GetTitleData,
 	    [this](ActorWrapper Caller, void* Params, std::string eventName)
@@ -66,13 +112,11 @@ void TitlesComponent::hookFunctions()
 		    if (!params)
 			    return;
 
-		    /*
-		        // debug
-		        std::string titleId = params->TitleId.ToString();
-		        LOG("GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
-		    */
+		    // debug
+		    // std::string titleId = params->TitleId.ToString();
+		    // LOG("(debug) GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
 
-		    if (params->TitleId != StringUtils::ToWideString(m_selectedTitleId).c_str())
+		    if (params->TitleId.ToString() != m_selectedTitleId)
 			    return;
 
 		    TitleAppearance* preset = getActivePreset();
@@ -85,34 +129,35 @@ void TitlesComponent::hookFunctions()
 		    LOG("Set m_shouldOverwriteGetTitleDataReturnVal: {}", m_shouldOverwriteGetTitleDataReturnVal);
 	    });
 
-	hookWithCallerPost(Events::PlayerTitleConfig_X_GetTitleData,
-	    [this](ActorWrapper Caller, void* Params, ...)
-	    {
-		    return;
+	// hookWithCallerPost(Events::PlayerTitleConfig_X_GetTitleData,
+	//     [this](ActorWrapper Caller, void* Params, ...)
+	//     {
+	// 	    return;
 
-		    auto* caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
-		    if (!caller)
-			    return;
+	// 	    auto* caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
+	// 	    if (!caller)
+	// 		    return;
 
-		    auto* params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
-		    if (!params)
-			    return;
+	// 	    auto* params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
+	// 	    if (!params)
+	// 		    return;
 
-		    /*
-		        // debug
-		        std::string titleId = params->TitleId.ToString();
-		        LOG("PlayerTitleConfig_X.GetTitleData(\"{}\") was called", titleId);
-		    */
+	// 	    /*
+	// 	        // debug
+	// 	        std::string titleId = params->TitleId.ToString();
+	// 	        LOG("PlayerTitleConfig_X.GetTitleData(\"{}\") was called", titleId);
+	// 	    */
 
-		    if (params->TitleId != StringUtils::ToWideString(m_selectedTitleId).c_str())
-			    return;
+	// 	    std::string titleId = params->TitleId.ToString();
+	// 	    if (titleId != m_selectedTitleId)
+	// 		    return;
 
-		    TitleAppearance* preset = getActivePreset();
-		    if (!preset)
-			    return;
-		    params->ReturnValue = preset->toTitleData(params->TitleId);
-		    LOG("Set custom FPlayerTitleData return value for \"{}\"", params->TitleId.ToString());
-	    });
+	// 	    TitleAppearance* preset = getActivePreset();
+	// 	    if (!preset)
+	// 		    return;
+	// 	    params->ReturnValue = preset->toTitleData(params->TitleId);
+	// 	    LOG("Set custom FPlayerTitleData return value for \"{}\"", titleId);
+	//     });
 
 	hookEventPost(Events::GFxData_StartMenu_TA_ProgressToMainMenu, [this](...) { applySelectedAppearanceToUser(); });
 
@@ -177,36 +222,6 @@ void TitlesComponent::initCvars()
 }
 
 // ##############################################################################################################
-// ############################################### EVENT CALLBACKS ##############################################
-// ##############################################################################################################
-
-void TitlesComponent::event_GFxData_PlayerTitles_TA_UpdateSelectedTitle(ActorWrapper Caller, void* Params, std::string eventName)
-{
-	auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
-	if (!caller)
-		return;
-
-	auto* params = reinterpret_cast<UGFxData_PlayerTitles_TA_execUpdateSelectedTitle_Params*>(Params);
-	if (!params)
-		return;
-
-	m_selectedTitleId = params->Title.ToString();
-	LOG("Updated m_selectedTitleId: \"{}\"", m_selectedTitleId);
-
-	// this bool exists so we only modify the FPlayerTitleData of selected title if user has just selected it via the RL title picker
-	// bc we dont wanna overwrite it EVERY time FPlayerTitleData is requested (via UGFxData_PlayerTitles_TA::GetTitleData)
-	// like, for example, if GetTitleData() is called to get the title data for a DIFFERENT player in the lobby
-	// ... but im not even sure if that's what happens. still need to test ig
-	m_shouldOverwriteGetTitleDataReturnVal = true;
-	LOG("Set m_shouldOverwriteGetTitleDataReturnVal: {}", m_shouldOverwriteGetTitleDataReturnVal);
-
-	// We call UpdatePlayerTitles() to undo the custom appearance done to the old selected title...
-	// which causes a bunch of GetTitleData() side-effect functions to fire...
-	// which are handled by other hooks to set the custom appearance on the new selected title
-	caller->UpdatePlayerTitles();
-}
-
-// ##############################################################################################################
 // ###############################################    FUNCTIONS    ##############################################
 // ##############################################################################################################
 
@@ -222,12 +237,12 @@ void TitlesComponent::updateGameTitleAppearances(UTitleConfig_X* config, bool fo
 	m_gameTitles.clear(); // yeet old data
 
 	LOG("UTitleConfig_X has {} titles", config->Titles.size());
-	for (const FPlayerTitleData& title_data : config->Titles)
+	for (const FPlayerTitleData& titleData : config->Titles)
 	{
-		if (title_data.Id == L"None" || title_data.Text.empty())
+		if (titleData.Id == L"None" || titleData.Text.empty())
 			continue;
 
-		m_gameTitles.emplace_back(title_data);
+		m_gameTitles.emplace_back(titleData.Id.GetDisplayIndex(), titleData);
 	}
 
 	LOG("Stored appearance of {} game titles", m_gameTitles.size());
@@ -1045,33 +1060,18 @@ void TitlesComponent::display_gameTitlesDropdown()
 			const std::string& titleText      = title.getText();
 			const std::string  titleTextLower = Format::ToLower(title.getText());
 
-			if (!searchQuery.empty()) // only render option if there's text in search box & it matches the key name
+			if (!searchQuery.empty() && (titleTextLower.find(searchQuery) == std::string::npos))
+				continue;
+
+			ImGui::PushStyleColor(ImGuiCol_Text, title.getImGuiTextColor());
+
+			if (ImGui::Selectable(titleText.c_str(), titleText == currentTitleText))
 			{
-				if (titleTextLower.find(searchQuery) == std::string::npos)
-					continue;
-
-				ImGui::PushStyleColor(ImGuiCol_Text, title.getImGuiTextColor());
-
-				if (ImGui::Selectable(titleText.c_str(), titleText == currentTitleText))
-				{
-					*currentTitle = title;
-					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
-				}
-
-				ImGui::PopStyleColor();
+				*currentTitle = static_cast<TitleAppearance>(title);
+				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 			}
-			else // if there's no text in search box, render all possible key options
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, title.getImGuiTextColor());
 
-				if (ImGui::Selectable(titleText.c_str(), titleText == currentTitleText))
-				{
-					*currentTitle = title;
-					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
-				}
-
-				ImGui::PopStyleColor();
-			}
+			ImGui::PopStyleColor();
 		}
 
 		ImGui::EndCombo();

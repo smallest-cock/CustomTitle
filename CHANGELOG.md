@@ -1,6 +1,7 @@
 # Changelog
 
 ## v1.0.9
+- Fixed custom title not being applied when a tournament title is equipped
 - Added an Info tab in settings to give info about how the plugin works
 - Added the currently equipped title ID in the Presets tab
 

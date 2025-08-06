@@ -175,6 +175,14 @@ public:
 	}
 };
 
+struct GameTitleAppearance : TitleAppearance
+{
+	int32_t idFnameEntry = -1;
+
+	GameTitleAppearance() {}
+	GameTitleAppearance(int32_t id, const FPlayerTitleData& data) : TitleAppearance(data), idFnameEntry(id) {}
+};
+
 class TitlesComponent : Component<TitlesComponent>
 {
 public:
@@ -190,10 +198,6 @@ private:
 	void initCvars();
 
 private:
-	// event callbacks
-	void event_GFxData_PlayerTitles_TA_UpdateSelectedTitle(ActorWrapper Caller, void* Params, std::string eventName);
-
-private:
 	static constexpr int MAX_TEXT_LENGTH = 64; // max characters that'll show up in UI, excluding {brace} symbols
 
 	fs::path m_pluginFolder;
@@ -206,10 +210,11 @@ private:
 	std::shared_ptr<bool> m_useHueColorPicker             = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
 
-	bool                         m_enabled           = false;
-	int                          m_activePresetIndex = 0;
-	std::vector<TitleAppearance> m_titlePresets;
-	std::vector<TitleAppearance> m_gameTitles;
+	bool                             m_enabled           = false;
+	int                              m_activePresetIndex = 0;
+	TitleAppearance                  m_currentOgAppearance;
+	std::vector<TitleAppearance>     m_titlePresets;
+	std::vector<GameTitleAppearance> m_gameTitles; // vector preserves the order that they were found in the title config
 	std::unordered_map<UGFxData_PRI_TA*, TitleAppearance>
 	    m_ingameCustomPresets; // <--- or APRI_TA* as the key if that works better, with the chat data nd all that
 
