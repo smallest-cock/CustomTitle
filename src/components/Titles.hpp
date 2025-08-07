@@ -1,24 +1,6 @@
 #pragma once
 #include "Component.hpp"
 
-// returns a AARRGGBB packed 32-bit int
-inline uint32_t PackColor(const FColor& col)
-{
-	return (static_cast<uint32_t>(col.A) << 24) | (static_cast<uint32_t>(col.R) << 16) | (static_cast<uint32_t>(col.G) << 8) |
-	       static_cast<uint32_t>(col.B);
-}
-
-// expects a AARRGGBB packed 32-bit int
-inline FColor UnpackColor(uint32_t packed)
-{
-	return {
-	    static_cast<uint8_t>(packed & 0xFF),         // B
-	    static_cast<uint8_t>((packed >> 8) & 0xFF),  // G
-	    static_cast<uint8_t>((packed >> 16) & 0xFF), // R
-	    static_cast<uint8_t>((packed >> 24) & 0xFF)  // A
-	};
-}
-
 // class TitleAppearance // i wan make class but too lazy switch to using getters/setters in TitlesComponent class
 struct TitleAppearance
 {
@@ -35,144 +17,35 @@ public:
 	}
 	TitleAppearance(const FPlayerTitleData& data) { updateFromPlayerTitleData(data); }
 
-	void updateFromPlayerTitleData(const FPlayerTitleData& data)
-	{
-		m_text                 = data.Text.ToString();
-		m_textColor            = data.Color;
-		m_glowColor            = data.GlowColor;
-		m_sameTextAndGlowColor = (m_textColor.R == m_glowColor.R) && (m_textColor.G == m_glowColor.G) && (m_textColor.B == m_glowColor.B) &&
-		                         (m_textColor.A == m_glowColor.A);
-	}
-
-	FPlayerTitleData toTitleData(const FName& id) const
-	{
-		FPlayerTitleData data{};
-		data.Text      = getTextFStr();
-		data.Id        = id;
-		data.Category  = L"None";
-		data.Color     = getTextFColor();
-		data.GlowColor = getGlowFColor();
-		return data;
-	}
+	void             updateFromPlayerTitleData(const FPlayerTitleData& data);
+	FPlayerTitleData toTitleData(const FName& id) const;
 
 	// getters
 	std::string getText() const { return m_text; }
-
-	FString getTextFStr() const { return FString::create(m_text); }
-
-	FColor getTextFColor() const { return m_textColor; }
-
-	void getTextColor(float (&outArray)[4]) const
-	{
-		outArray[0] = m_textColor.R / 255.0f;
-		outArray[1] = m_textColor.G / 255.0f;
-		outArray[2] = m_textColor.B / 255.0f;
-		outArray[3] = m_textColor.A / 255.0f;
-	}
-
-	ImVec4 getImGuiTextColor() const
-	{
-		return {m_textColor.R / 255.0f, m_textColor.G / 255.0f, m_textColor.B / 255.0f, m_textColor.A / 255.0f};
-	}
-
-	int32_t getIntTextColor() const { return UObject::ColorToInt(m_textColor); }
-
-	inline FColor getGlowFColor() const { return m_glowColor; }
-
-	void getGlowColor(float (&outArray)[4]) const
-	{
-		outArray[0] = m_glowColor.R / 255.0f;
-		outArray[1] = m_glowColor.G / 255.0f;
-		outArray[2] = m_glowColor.B / 255.0f;
-		outArray[3] = m_glowColor.A / 255.0f;
-	}
-
-	ImVec4 getImGuiGlowColor() const
-	{
-		return {m_glowColor.R / 255.0f, m_glowColor.G / 255.0f, m_glowColor.B / 255.0f, m_glowColor.A / 255.0f};
-	}
-
-	int32_t getIntGlowColor() const { return UObject::ColorToInt(m_glowColor); }
+	FString     getTextFStr() const { return FString::create(m_text); }
+	FColor      getTextFColor() const { return m_textColor; }
+	FColor      getGlowFColor() const { return m_glowColor; }
+	void        getTextColor(float (&outArray)[4]) const;
+	void        getGlowColor(float (&outArray)[4]) const;
+	ImVec4      getImGuiTextColor() const;
+	ImVec4      getImGuiGlowColor() const;
+	int32_t     getIntTextColor() const { return UObject::ColorToInt(m_textColor); }
+	int32_t     getIntGlowColor() const { return UObject::ColorToInt(m_glowColor); }
 
 	// setters
 	void setText(const std::string& str) { m_text = str; }
-
 	void setTextColor(const FColor& newCol) { m_textColor = newCol; }
 	void setTextColor(const float (&newCol)[4]) { m_textColor = Colors::toFColor(newCol); }
-
 	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
 	void setGlowColor(const float (&newCol)[4]) { m_glowColor = Colors::toFColor(newCol); }
-
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
 
-	// static functions (TODO: move to ModUtils)
-
-	// FColor --> AARRGGBB hex string
-	static std::string ColorToHex(const FColor& col)
-	{
-		uint32_t           packedInt = PackColor(col);
-		std::ostringstream ss;
-		ss << std::hex << std::uppercase << std::setfill('0') << std::setw(8) << packedInt;
-		return ss.str();
-	}
-
-	// AARRGGBB hex string --> FColor
-	static FColor HexToColor(const std::string& hex)
-	{
-		if (hex.size() != 8)
-		{
-			LOG("ERROR: Color hex string \"{}\" isn't 8 characters. Falling back to white...");
-			return {255, 255, 255, 255}; // fallback to white
-		}
-
-		uint32_t packed = static_cast<uint32_t>(std::stoul(hex, nullptr, 16));
-		return UnpackColor(packed);
-	}
-
-	std::string getDebugTextColorStr() const
-	{
-		return std::format("R:{}-G:{}-B:{}-A:{}", m_textColor.R, m_textColor.G, m_textColor.B, m_textColor.A);
-	}
-
-	std::string getDebugGlowColorStr() const
-	{
-		return std::format("R:{}-G:{}-B:{}-A:{}", m_glowColor.R, m_glowColor.G, m_glowColor.B, m_glowColor.A);
-	}
-
-	// Will output "title:My custom text|FF8040FF|00FF00FF" ... or "title:My custom text|FF8040FF|-" if m_sameTextAndGlowColor is true
-	std::string toEncodedString() const
-	{
-		constexpr const char* prefix = "title:";
-
-		return std::format("{}{}|{}|{}", prefix, m_text, ColorToHex(m_textColor), m_sameTextAndGlowColor ? "-" : ColorToHex(m_glowColor));
-	}
-
-	json toJson() const
-	{
-		json j;
-
-		j["text"]                 = m_text;
-		j["textColor"]            = Colors::fcolorToHexRGBA(m_textColor);
-		j["glowColor"]            = Colors::fcolorToHexRGBA(m_glowColor);
-		j["sameTextAndGlowColor"] = m_sameTextAndGlowColor;
-
-		return j;
-	}
-
-	void fromJson(const json& j)
-	{
-		m_text                 = j.value("text", "{legend} {grandchampion} example {gold} {champion}");
-		m_textColor            = Colors::hexRGBAtoFColor(j.value("textColor", "0xFFFFFFFF"));
-		m_glowColor            = Colors::hexRGBAtoFColor(j.value("glowColor", "0xFFFFFFFF"));
-		m_sameTextAndGlowColor = j.value("sameTextAndGlowColor", true);
-	}
-
-	bool operator==(const TitleAppearance& other) const
-	{
-		return (m_text == other.m_text) &&
-		       (m_textColor.R == other.m_textColor.R && m_textColor.G == other.m_textColor.G && m_textColor.B == other.m_textColor.B) &&
-		       (m_glowColor.R == other.m_glowColor.R && m_glowColor.G == other.m_glowColor.G && m_glowColor.B == other.m_glowColor.B);
-	}
+	std::string getDebugTextColorStr() const;
+	std::string getDebugGlowColorStr() const;
+	std::string toEncodedString() const;
+	json        toJson() const;
+	void        fromJson(const json& j);
+	bool        operator==(const TitleAppearance& other) const;
 };
 
 struct GameTitleAppearance : TitleAppearance
@@ -209,6 +82,7 @@ private:
 	std::shared_ptr<bool> m_filterOtherPlayerTitles       = std::make_shared<bool>(false);
 	std::shared_ptr<bool> m_useHueColorPicker             = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
+	std::shared_ptr<bool> m_showEquippedTitleDetails      = std::make_shared<bool>(false);
 
 	bool                             m_enabled           = false;
 	int                              m_activePresetIndex = 0;
@@ -255,6 +129,7 @@ private:
 	static void sendTitleDataChat(const TitleAppearance& appearance, APlayerController* pc = nullptr);
 
 public:
+	void             handleUnload();
 	TitleAppearance* getActivePreset();
 
 	void spawnSelectedPreset(bool log = false);

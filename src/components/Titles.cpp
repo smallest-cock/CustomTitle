@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "Cvars.hpp"
+#include <ModUtils/util/Utils.hpp>
 #include <ModUtils/gui/GuiTools.hpp>
+#include <ModUtils/wrappers/GFxWrapper.hpp>
 #include "Titles.hpp"
 #include "Items.hpp"
-#include <ModUtils/wrappers/GFxWrapper.hpp>
+#include "Instances.hpp"
 
 // ##############################################################################################################
 // ################################################    INIT    ##################################################
@@ -65,41 +67,66 @@ void TitlesComponent::hookFunctions()
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
 		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
-		    if (!caller)
+		    if (!validUObject(caller))
 			    return;
 
 		    auto* params = reinterpret_cast<UGFxData_PlayerTitles_TA_execUpdateSelectedTitle_Params*>(Params);
 		    if (!params)
 			    return;
 
-		    // update stored OG appearance for current title
-		    int32_t idFnameIdx = params->Title.GetDisplayIndex();
-		    for (const auto& title : m_gameTitles)
-		    {
-			    if (title.idFnameEntry != idFnameIdx)
-				    continue;
-
-			    m_currentOgAppearance = static_cast<TitleAppearance>(title);
-			    break;
-		    }
-
 		    m_selectedTitleId = params->Title.ToString();
 		    LOG("Updated m_selectedTitleId: \"{}\"", m_selectedTitleId);
+
+		    if (m_selectedTitleId != "None")
+		    {
+			    // update stored OG appearance for current title
+			    int32_t idFnameIdx = params->Title.GetDisplayIndex();
+			    for (const auto& title : m_gameTitles)
+			    {
+				    if (title.idFnameEntry != idFnameIdx)
+					    continue;
+
+				    m_currentOgAppearance = static_cast<TitleAppearance>(title);
+				    break;
+			    }
+		    }
+		    else
+		    {
+			    TitleAppearance noneAppearance{};
+			    noneAppearance.setText("");
+			    noneAppearance.setTextColor({});
+			    noneAppearance.setGlowColor({});
+			    m_currentOgAppearance = noneAppearance;
+		    }
 
 		    // here we only apply the active preset to banner, bc pretty sure UpdateSelectedTitle wont be called anywhere except main menu
 		    TitleAppearance* title = getActivePreset();
 		    if (!title)
 			    return;
-		    applyPresetToBanner(*title);
+		    applyPresetToBanner(*title, caller);
 
 		    // this bool exists so we only modify FPlayerTitleData of our equipped title if user has just selected it via the title picker
-		    // bc we dont wanna overwrite EVERY FPlayerTitleData that's requested by the game... bc it could be for diff players too (idk)
+		    // bc we dont wanna overwrite EVERY FPlayerTitleData that's requested by the game... bc it might affect other players too (idk)
 		    m_shouldOverwriteGetTitleDataReturnVal = true;
 		    LOG("Set m_shouldOverwriteGetTitleDataReturnVal: {}", m_shouldOverwriteGetTitleDataReturnVal);
 	    });
 
+	/*
+	hookEventPost(Events::GFxData_PlayerTitles_TA__HandleLoadoutSaveLoaded_0x1,
+	[this](...)
+	{
+	    if (m_selectedTitleId == "None")
+	    return;
+
+	    TitleAppearance* preset = getActivePreset();
+	    if (!preset)
+	    return;
+	    applyPresetToBanner(*preset);
+	});
+	*/
+
 	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_GetTitleData,
-	    [this](ActorWrapper Caller, void* Params, std::string eventName)
+	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
 		    if (!m_shouldOverwriteGetTitleDataReturnVal)
 			    return;
@@ -112,9 +139,11 @@ void TitlesComponent::hookFunctions()
 		    if (!params)
 			    return;
 
+		    /*
 		    // debug
-		    // std::string titleId = params->TitleId.ToString();
-		    // LOG("(debug) GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
+		    std::string titleId = params->TitleId.ToString();
+		    LOG("(debug) GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
+		    */
 
 		    if (params->TitleId.ToString() != m_selectedTitleId)
 			    return;
@@ -122,42 +151,56 @@ void TitlesComponent::hookFunctions()
 		    TitleAppearance* preset = getActivePreset();
 		    if (!preset)
 			    return;
-		    params->ReturnValue = preset->toTitleData(params->TitleId);
-		    LOG("Set custom FPlayerTitleData return value for \"{}\"", params->TitleId.ToString());
 
-		    m_shouldOverwriteGetTitleDataReturnVal = false;
-		    LOG("Set m_shouldOverwriteGetTitleDataReturnVal: {}", m_shouldOverwriteGetTitleDataReturnVal);
+		    if (m_selectedTitleId == "None")
+			    DELAY(
+			        0.1f,
+			        {
+				        if (!preset || !validUObject(caller))
+					        return;
+				        applyPresetToBanner(*preset, caller);
+			        },
+			        preset,
+			        caller);
+		    else
+		    {
+			    params->ReturnValue = preset->toTitleData(params->TitleId);
+			    LOG("Set custom FPlayerTitleData return value for \"{}\"", params->TitleId.ToString());
+
+			    m_shouldOverwriteGetTitleDataReturnVal = false;
+			    LOG("Set m_shouldOverwriteGetTitleDataReturnVal: {}", m_shouldOverwriteGetTitleDataReturnVal);
+		    }
 	    });
 
-	// hookWithCallerPost(Events::PlayerTitleConfig_X_GetTitleData,
-	//     [this](ActorWrapper Caller, void* Params, ...)
-	//     {
-	// 	    return;
+	/*
+	hookWithCallerPost(Events::PlayerTitleConfig_X_GetTitleData,
+	    [this](ActorWrapper Caller, void* Params, ...)
+	    {
+	        return;
 
-	// 	    auto* caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
-	// 	    if (!caller)
-	// 		    return;
+	        auto* caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
+	        if (!caller)
+	            return;
 
-	// 	    auto* params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
-	// 	    if (!params)
-	// 		    return;
+	        auto* params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
+	        if (!params)
+	            return;
 
-	// 	    /*
-	// 	        // debug
-	// 	        std::string titleId = params->TitleId.ToString();
-	// 	        LOG("PlayerTitleConfig_X.GetTitleData(\"{}\") was called", titleId);
-	// 	    */
+	        //// debug
+	        // std::string titleId = params->TitleId.ToString();
+	        // LOG("PlayerTitleConfig_X.GetTitleData(\"{}\") was called", titleId);
 
-	// 	    std::string titleId = params->TitleId.ToString();
-	// 	    if (titleId != m_selectedTitleId)
-	// 		    return;
+	        std::string titleId = params->TitleId.ToString();
+	        if (titleId != m_selectedTitleId)
+	            return;
 
-	// 	    TitleAppearance* preset = getActivePreset();
-	// 	    if (!preset)
-	// 		    return;
-	// 	    params->ReturnValue = preset->toTitleData(params->TitleId);
-	// 	    LOG("Set custom FPlayerTitleData return value for \"{}\"", titleId);
-	//     });
+	        TitleAppearance* preset = getActivePreset();
+	        if (!preset)
+	            return;
+	        params->ReturnValue = preset->toTitleData(params->TitleId);
+	        LOG("Set custom FPlayerTitleData return value for \"{}\"", titleId);
+	    });
+	*/
 
 	hookEventPost(Events::GFxData_StartMenu_TA_ProgressToMainMenu, [this](...) { applySelectedAppearanceToUser(); });
 
@@ -219,11 +262,34 @@ void TitlesComponent::initCvars()
 	registerCvar_bool(Cvars::filterOtherPlayerTitles, false).bindTo(m_filterOtherPlayerTitles);
 	registerCvar_bool(Cvars::useHueColorPicker, true).bindTo(m_useHueColorPicker);
 	registerCvar_bool(Cvars::applyOthersTitleNotif, false).bindTo(m_notifyWhenApplyingOthersTitle);
+	registerCvar_bool(Cvars::showEquippedTitleDetails, false).bindTo(m_showEquippedTitleDetails);
 }
 
 // ##############################################################################################################
 // ###############################################    FUNCTIONS    ##############################################
 // ##############################################################################################################
+
+void TitlesComponent::handleUnload()
+{
+	if (m_selectedTitleId.empty())
+		return;
+
+	// restore equipped title's OG appearance...
+	// banner
+	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+	if (pt)
+	{
+		pt->UpdatePlayerTitles();
+		LOG("(unload) Restored OG banner appearance");
+	}
+
+	// in-game
+	auto* pri = getUserGFxPRI();
+	if (!pri)
+		return;
+	applyPresetToPri(pri, m_currentOgAppearance);
+	LOG("(unload) Restored OG banner appearance");
+}
 
 void TitlesComponent::updateGameTitleAppearances(UTitleConfig_X* config, bool forceSearch)
 {
@@ -803,7 +869,7 @@ bool TitlesComponent::decodeAppearance(const std::string& inStr, TitleAppearance
 	*/
 
 	outAppearance.setText(parts[0]);
-	outAppearance.setTextColor(TitleAppearance::HexToColor(parts[1]));
+	outAppearance.setTextColor(Colors::hexToFColor(parts[1]));
 
 	if (parts[2] == "-")
 	{
@@ -812,7 +878,7 @@ bool TitlesComponent::decodeAppearance(const std::string& inStr, TitleAppearance
 	}
 	else
 	{
-		outAppearance.setGlowColor(TitleAppearance::HexToColor(parts[2]));
+		outAppearance.setGlowColor(Colors::hexToFColor(parts[2]));
 		outAppearance.setSameTextAndGlowColor(false);
 	}
 
@@ -876,15 +942,62 @@ void TitlesComponent::display_titlePresetInfo()
 	colorEditFlags                            = *m_useHueColorPicker ? (ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_PickerHueWheel)
 	                                                                 : ImGuiColorEditFlags_NoInputs;
 
+	static ImGuiColorEditFlags noEditFlags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoInputs;
+
 	{
 		GUI::ScopedChild c{"PrestInfo", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.8f)};
 
 		if (!m_selectedTitleId.empty())
 		{
-			ImGui::TextColored(GUI::Colors::LightGreen, "Equipped title: ");
-			ImGui::SameLine();
-			ImGui::Text("%s", m_selectedTitleId.c_str());
-			GUI::ToolTip("The ID of your real title\n\n(aka what's beneath the custom appearance)");
+			if (*m_showEquippedTitleDetails)
+			{
+				if (ImGui::CollapsingHeader("Equipped title info"))
+				{
+					static constexpr float spacing = 75.0f;
+
+					ImGui::TextColored(GUI::Colors::LightGreen, "ID:");
+					GUI::SameLineSpacing_absolute(spacing);
+					ImGui::Text("%s", m_selectedTitleId.c_str());
+
+					if (m_selectedTitleId != "None")
+					{
+						ImGui::TextColored(GUI::Colors::LightGreen, "Text:");
+						GUI::SameLineSpacing_absolute(spacing);
+						ImGui::Text("%s", m_currentOgAppearance.getText().c_str());
+
+						ImGui::TextColored(GUI::Colors::LightGreen, "Color:");
+						GUI::SameLineSpacing_absolute(spacing);
+
+						float color[4] = {0, 0, 0, 0};
+						if (m_currentOgAppearance.m_sameTextAndGlowColor)
+						{
+							m_currentOgAppearance.getTextColor(color);
+							ImGui::ColorEdit4("##singleColor", &color[0], noEditFlags);
+						}
+						else
+						{
+							m_currentOgAppearance.getTextColor(color);
+							ImGui::ColorEdit4("Text", &color[0], noEditFlags);
+
+							GUI::SameLineSpacing_relative(30.0f);
+
+							float glowColor[4] = {0, 0, 0, 0};
+							m_currentOgAppearance.getGlowColor(color);
+							ImGui::ColorEdit4("Glow", &color[0], noEditFlags);
+						}
+					}
+
+					GUI::Spacing(2);
+				}
+			}
+			else
+			{
+				ImGui::TextColored(GUI::Colors::LightGreen, "Equipped title: ");
+				ImGui::SameLine();
+				ImGui::Text("%s", m_selectedTitleId.c_str());
+				GUI::ToolTip("The ID of your real title\n\n(aka what's beneath the custom appearance)");
+			}
+
 			ImGui::Separator();
 
 			GUI::Spacing(4);
@@ -997,8 +1110,8 @@ void TitlesComponent::display_titlePresetInfo()
 				_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
 			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Press \"OK\" at the spawn prompt. Pressing \"EQUIP NOW\" can cause buggy behavior.\n\n"
-				                  "TIP: Bind this command to spawn titles with a keypress: %s",
+				ImGui::SetTooltip("Press OK at the spawn prompt. Pressing EQUIP NOW can cause buggy behavior.\n\n"
+				                  "TIP - Bind this command to a key: %s",
 				    Commands::spawnCustomTitle.name);
 			}
 		}
@@ -1102,5 +1215,101 @@ bool TitlesComponent::test1()
 }
 
 bool TitlesComponent::test2() { return true; }
+
+// ##############################################################################################################
+// #########################################    TitleAppearance    ##############################################
+// ##############################################################################################################
+
+void TitleAppearance::updateFromPlayerTitleData(const FPlayerTitleData& data)
+{
+	m_text                 = data.Text.ToString();
+	m_textColor            = data.Color;
+	m_glowColor            = data.GlowColor;
+	m_sameTextAndGlowColor = (m_textColor.R == m_glowColor.R) && (m_textColor.G == m_glowColor.G) && (m_textColor.B == m_glowColor.B) &&
+	                         (m_textColor.A == m_glowColor.A);
+}
+
+FPlayerTitleData TitleAppearance::toTitleData(const FName& id) const
+{
+	FPlayerTitleData data{};
+	data.Text      = getTextFStr();
+	data.Id        = id;
+	data.Category  = L"None";
+	data.Color     = getTextFColor();
+	data.GlowColor = getGlowFColor();
+	return data;
+}
+
+void TitleAppearance::getTextColor(float (&outArray)[4]) const
+{
+	outArray[0] = m_textColor.R / 255.0f;
+	outArray[1] = m_textColor.G / 255.0f;
+	outArray[2] = m_textColor.B / 255.0f;
+	outArray[3] = m_textColor.A / 255.0f;
+}
+
+void TitleAppearance::getGlowColor(float (&outArray)[4]) const
+{
+	outArray[0] = m_glowColor.R / 255.0f;
+	outArray[1] = m_glowColor.G / 255.0f;
+	outArray[2] = m_glowColor.B / 255.0f;
+	outArray[3] = m_glowColor.A / 255.0f;
+}
+
+ImVec4 TitleAppearance::getImGuiTextColor() const
+{
+	return {m_textColor.R / 255.0f, m_textColor.G / 255.0f, m_textColor.B / 255.0f, m_textColor.A / 255.0f};
+}
+
+ImVec4 TitleAppearance::getImGuiGlowColor() const
+{
+	return {m_glowColor.R / 255.0f, m_glowColor.G / 255.0f, m_glowColor.B / 255.0f, m_glowColor.A / 255.0f};
+}
+
+std::string TitleAppearance::getDebugTextColorStr() const
+{
+	return std::format("R:{}-G:{}-B:{}-A:{}", m_textColor.R, m_textColor.G, m_textColor.B, m_textColor.A);
+}
+
+std::string TitleAppearance::getDebugGlowColorStr() const
+{
+	return std::format("R:{}-G:{}-B:{}-A:{}", m_glowColor.R, m_glowColor.G, m_glowColor.B, m_glowColor.A);
+}
+
+// Will output "title:My custom text|FF8040FF|00FF00FF" ... or "title:My custom text|FF8040FF|-" if m_sameTextAndGlowColor is true
+std::string TitleAppearance::toEncodedString() const
+{
+	constexpr const char* prefix = "title:";
+
+	return std::format(
+	    "{}{}|{}|{}", prefix, m_text, Colors::fcolorToHex(m_textColor), m_sameTextAndGlowColor ? "-" : Colors::fcolorToHex(m_glowColor));
+}
+
+json TitleAppearance::toJson() const
+{
+	json j;
+
+	j["text"]                 = m_text;
+	j["textColor"]            = Colors::fcolorToHexRGBA(m_textColor);
+	j["glowColor"]            = Colors::fcolorToHexRGBA(m_glowColor);
+	j["sameTextAndGlowColor"] = m_sameTextAndGlowColor;
+
+	return j;
+}
+
+void TitleAppearance::fromJson(const json& j)
+{
+	m_text                 = j.value("text", "{legend} {grandchampion} example {gold} {champion}");
+	m_textColor            = Colors::hexRGBAtoFColor(j.value("textColor", "0xFFFFFFFF"));
+	m_glowColor            = Colors::hexRGBAtoFColor(j.value("glowColor", "0xFFFFFFFF"));
+	m_sameTextAndGlowColor = j.value("sameTextAndGlowColor", true);
+}
+
+bool TitleAppearance::operator==(const TitleAppearance& other) const
+{
+	return (m_text == other.m_text) &&
+	       (m_textColor.R == other.m_textColor.R && m_textColor.G == other.m_textColor.G && m_textColor.B == other.m_textColor.B) &&
+	       (m_glowColor.R == other.m_glowColor.R && m_glowColor.G == other.m_glowColor.G && m_glowColor.B == other.m_glowColor.B);
+}
 
 class TitlesComponent Titles{};

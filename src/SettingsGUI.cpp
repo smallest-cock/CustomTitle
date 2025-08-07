@@ -1,5 +1,5 @@
-#include "BakkesmodPluginTemplate/IMGUI/imgui.h"
 #include "pch.h"
+#include "Cvars.hpp"
 #include "ModUtils/gui/GuiTools.hpp"
 #include "CustomTitle.hpp"
 #include "Macros.hpp"
@@ -21,18 +21,27 @@ void CustomTitle::RenderSettings()
 		if (ImGui::Button("Open Menu"))
 			GAME_THREAD_EXECUTE({ cvarManager->executeCommand(openMenuCommand); }, openMenuCommand);
 
-		GUI::Spacing(8);
+		GUI::Spacing(4);
 
 		ImGui::Text("or bind this command:  ");
 		ImGui::SameLine();
 		ImGui::PushItemWidth(150);
-		ImGui::InputText("", &openMenuCommand, ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText("##openMenuCommand", &openMenuCommand, ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopItemWidth();
 
 		GUI::Spacing(8);
 
 		if (ImGui::Button(std::format("Open {} folder", stringify_(CustomTitle)).c_str()))
 			Files::OpenFolder(m_pluginFolder);
+
+		GUI::Spacing(8);
+
+		std::string spawnTitleCommand = Commands::spawnCustomTitle.name;
+		ImGui::Text("Bind this command to spawn your custom title with a keypress:  ");
+		ImGui::SameLine();
+		ImGui::PushItemWidth(200);
+		ImGui::InputText("##spawnCommand", &spawnTitleCommand, ImGuiInputTextFlags_ReadOnly);
+		ImGui::PopItemWidth();
 	}
 	ImGui::EndChild();
 
@@ -73,11 +82,12 @@ void CustomTitle::RenderWindow()
 
 void CustomTitle::Settings_Tab()
 {
-	auto showTitleToOthers_cvar       = getCvar(Cvars::showTitleToOthers);
-	auto showOtherPlayerTitles_cvar   = getCvar(Cvars::showOtherPlayerTitles);
-	auto filterOtherPlayerTitles_cvar = getCvar(Cvars::filterOtherPlayerTitles);
-	auto applyOthersTitleNotif_cvar   = getCvar(Cvars::applyOthersTitleNotif);
-	auto useHueColorPicker_cvar       = getCvar(Cvars::useHueColorPicker);
+	auto showTitleToOthers_cvar        = getCvar(Cvars::showTitleToOthers);
+	auto showOtherPlayerTitles_cvar    = getCvar(Cvars::showOtherPlayerTitles);
+	auto filterOtherPlayerTitles_cvar  = getCvar(Cvars::filterOtherPlayerTitles);
+	auto applyOthersTitleNotif_cvar    = getCvar(Cvars::applyOthersTitleNotif);
+	auto useHueColorPicker_cvar        = getCvar(Cvars::useHueColorPicker);
+	auto showEquippedTitleDetails_cvar = getCvar(Cvars::showEquippedTitleDetails);
 	if (!showTitleToOthers_cvar)
 		return;
 
@@ -86,14 +96,14 @@ void CustomTitle::Settings_Tab()
 		showTitleToOthers_cvar.setValue(showTitleToOthers);
 
 	bool showOtherPlayerTitles = showOtherPlayerTitles_cvar.getBoolValue();
-	if (ImGui::Checkbox("Show titles of other players with the mod", &showOtherPlayerTitles))
+	if (ImGui::Checkbox("Show the titles of other players with the mod", &showOtherPlayerTitles))
 		showOtherPlayerTitles_cvar.setValue(showOtherPlayerTitles);
 
 	bool filterOtherPlayerTitles = filterOtherPlayerTitles_cvar.getBoolValue();
 	if (ImGui::Checkbox("Censor other players' custom titles", &filterOtherPlayerTitles))
 		filterOtherPlayerTitles_cvar.setValue(filterOtherPlayerTitles);
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Word filtering isn't foolproof. Some stuff might slip through...");
+		ImGui::SetTooltip("Word filtering isn't foolproof");
 
 	bool applyOthersTitleNotif = applyOthersTitleNotif_cvar.getBoolValue();
 	if (ImGui::Checkbox("Show notification when applying other players' titles", &applyOthersTitleNotif))
@@ -102,6 +112,10 @@ void CustomTitle::Settings_Tab()
 	bool useHueColorPicker = useHueColorPicker_cvar.getBoolValue();
 	if (ImGui::Checkbox("Use hue wheel for color picker", &useHueColorPicker))
 		useHueColorPicker_cvar.setValue(useHueColorPicker);
+
+	bool showEquippedTitleDetails = showEquippedTitleDetails_cvar.getBoolValue();
+	if (ImGui::Checkbox("Show extra info about equipped title in Presets tab", &showEquippedTitleDetails))
+		showEquippedTitleDetails_cvar.setValue(showEquippedTitleDetails);
 }
 
 void CustomTitle::TitlePresets_Tab()
@@ -140,7 +154,7 @@ void CustomTitle::Info_Tab()
 
 	ImGui::TextColored(GUI::Colors::LightGreen, "This mod simply alters the appearance of your equipped title (client-side)");
 	ImGui::BulletText("It doesn't create new titles");
-	ImGui::BulletText("It doesn't give you more titles than you already own");
+	ImGui::BulletText("It doesn't give you any more titles than you already own");
 
 	GUI::Spacing(2);
 

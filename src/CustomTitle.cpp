@@ -21,6 +21,7 @@ void CustomTitle::onLoad()
 
 void CustomTitle::onUnload()
 {
+	Titles.handleUnload();
 	Textures.setRestoreOriginalIcons(true); // restore original title icon textures (if any were changed)
 	Dx11Data::UnhookPresent();
 }

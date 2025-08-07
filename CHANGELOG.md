@@ -1,9 +1,9 @@
 # Changelog
 
 ## v1.0.9
-- Fixed custom title not being applied when a tournament title is equipped
-- Added an Info tab in settings to give info about how the plugin works
-- Added the currently equipped title ID in the Presets tab
+- Fixed custom titles not being applied when a tournament title is equipped
+- Added equipped title info in the Presets tab
+- Added an Info tab in settings to explain how to use the plugin
 
 ## v1.0.8
 - Fixed crashes when applying custom icons (due to an outdated SDK)
