@@ -21,6 +21,9 @@ constexpr CvarData applyOthersTitleNotif    = CVAR("apply_others_title_notificat
 constexpr CvarData useHueColorPicker        = CVAR("use_hue_color_picker", "use HSV hue color wheel triangle illuminati thing");
 constexpr CvarData showEquippedTitleDetails = CVAR("show_equipped_title_details", "show extra details about the equipped title");
 
+// numbers
+constexpr CvarData rgbSpeed = CVAR("rgb_speed", "RGB color cycle speed");
+
 // strings
 
 // colors

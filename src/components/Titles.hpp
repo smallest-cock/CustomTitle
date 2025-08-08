@@ -8,6 +8,7 @@ struct TitleAppearance
 	FColor      m_textColor            = {255, 255, 255, 255};
 	FColor      m_glowColor            = {255, 255, 255, 255};
 	bool        m_sameTextAndGlowColor = true;
+	bool        m_useRGB               = false;
 
 public:
 	TitleAppearance() {}
@@ -29,8 +30,9 @@ public:
 	void        getGlowColor(float (&outArray)[4]) const;
 	ImVec4      getImGuiTextColor() const;
 	ImVec4      getImGuiGlowColor() const;
-	int32_t     getIntTextColor() const { return UObject::ColorToInt(m_textColor); }
-	int32_t     getIntGlowColor() const { return UObject::ColorToInt(m_glowColor); }
+	int32_t     getIntTextColor() const;
+	int32_t     getIntGlowColor() const;
+	bool        useRGB() const { return m_useRGB; }
 
 	// setters
 	void setText(const std::string& str) { m_text = str; }
@@ -76,13 +78,14 @@ private:
 	fs::path m_pluginFolder;
 	fs::path m_titlePresetsJson;
 
-	// cvar flags
+	// cvar values
 	std::shared_ptr<bool> m_showOtherPlayerTitles         = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_showTitleToOthers             = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_filterOtherPlayerTitles       = std::make_shared<bool>(false);
 	std::shared_ptr<bool> m_useHueColorPicker             = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
 	std::shared_ptr<bool> m_showEquippedTitleDetails      = std::make_shared<bool>(false);
+	std::shared_ptr<int>  m_rgbSpeed                      = std::make_shared<int>(0);
 
 	bool                             m_enabled           = false;
 	int                              m_activePresetIndex = 0;
@@ -100,6 +103,7 @@ private:
 
 private:
 	void            addNewPreset();
+	void            tickRGB();
 	void            deletePreset(int index);
 	void            writePresetsToJson(bool notification = true) const;
 	void            addPresetsFromJson();
@@ -115,7 +119,7 @@ private:
 	bool spawn(const FString& spawn_id, bool animation = true, const std::string& spawn_msg = "");
 
 	// static
-	static void applyPresetToBanner(const TitleAppearance& title, UGFxData_PlayerTitles_TA* pt = nullptr, bool log = false);
+	static void applyPresetToBanner(const TitleAppearance& title, UGFxDataRow_X* gfxRow = nullptr, bool log = false);
 	static void applyPresetToPri(UGFxData_PRI_TA* pri, const TitleAppearance& title);
 
 	static FPlayerTitleData& getTitleFromConfig(int index, UTitleConfig_X* config = nullptr);
@@ -129,6 +133,8 @@ private:
 	static void sendTitleDataChat(const TitleAppearance& appearance, APlayerController* pc = nullptr);
 
 public:
+	static constexpr int DEFAULT_RGB_SPEED = 0;
+
 	void             handleUnload();
 	TitleAppearance* getActivePreset();
 

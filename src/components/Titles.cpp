@@ -47,6 +47,24 @@ void TitlesComponent::setFilePaths()
 
 void TitlesComponent::hookFunctions()
 {
+	hookWithCallerPost(Events::HUDBase_TA_DrawHUD,
+	    [this](ActorWrapper Caller, ...)
+	    {
+		    auto* caller = reinterpret_cast<AHUDBase_TA*>(Caller.memory_address);
+		    if (!validUObject(caller))
+			    return;
+
+		    tickRGB();
+
+		    TitleAppearance* preset = getActivePreset();
+		    if (!preset || !preset->useRGB())
+			    return;
+
+		    applyPresetToBanner(*preset, caller->Shell);
+
+		    // TODO: update RGB presets in-game
+	    });
+
 	hookWithCaller(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
@@ -263,11 +281,15 @@ void TitlesComponent::initCvars()
 	registerCvar_bool(Cvars::useHueColorPicker, true).bindTo(m_useHueColorPicker);
 	registerCvar_bool(Cvars::applyOthersTitleNotif, false).bindTo(m_notifyWhenApplyingOthersTitle);
 	registerCvar_bool(Cvars::showEquippedTitleDetails, false).bindTo(m_showEquippedTitleDetails);
+
+	registerCvar_number(Cvars::rgbSpeed, 0, true, -14, 9).bindTo(m_rgbSpeed);
 }
 
 // ##############################################################################################################
 // ###############################################    FUNCTIONS    ##############################################
 // ##############################################################################################################
+
+void TitlesComponent::tickRGB() { GRainbowColor::TickRGB(*m_rgbSpeed, DEFAULT_RGB_SPEED); }
 
 void TitlesComponent::handleUnload()
 {
@@ -803,22 +825,24 @@ void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA* pri, const TitleAppearan
 	LOG("Applied title preset for {}... (UGFxData_PRI_TA: {})", pri->PlayerName.ToString(), Format::ToHexString(pri));
 }
 
-void TitlesComponent::applyPresetToBanner(const TitleAppearance& title, UGFxData_PlayerTitles_TA* pt, bool log)
+void TitlesComponent::applyPresetToBanner(const TitleAppearance& title, UGFxDataRow_X* gfxRow, bool log)
 {
-	if (!validUObject(pt))
+	if (!validUObject(gfxRow))
 	{
-		pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
-		if (!validUObject(pt))
+		gfxRow = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+		if (!validUObject(gfxRow))
 			return;
 	}
 
-	GfxWrapper ptGfx{pt};
-	auto*      ds = ptGfx.get_datastore();
+	GfxWrapper gfx{gfxRow};
+	auto*      ds = gfx.get_datastore();
 	if (!validUObject(ds))
 		return;
 
-	int32_t row = pt->SelectedTitle;
-	FName   table{L"PlayerTitlesPlayerTitles"};
+	int32_t row = ds->GetValue(L"PlayerTitles", NULL, L"SelectedTitle").I; // selected title index is the row index
+	// ... or:
+	// int32_t row = pt->SelectedTitle;
+	FName table{L"PlayerTitlesPlayerTitles"};
 
 	ds->SetStringValue(table, row, L"Text", title.getTextFStr());
 	ds->SetIntValue(table, row, L"Color", title.getIntTextColor());
@@ -1029,55 +1053,66 @@ void TitlesComponent::display_titlePresetInfo()
 			GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 		}
 
-		GUI::Spacing(4);
+		GUI::SameLineSpacing_relative(20);
 
-		if (ImGui::Checkbox("Same text & glow color", &appearance.m_sameTextAndGlowColor))
+		if (ImGui::Checkbox("RGB", &appearance.m_useRGB))
 		{
-			if (appearance.m_sameTextAndGlowColor)
-			{
-				appearance.setGlowColor(appearance.m_textColor);
-
+			if (!appearance.m_useRGB)
 				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
-			}
 		}
 
-		GUI::Spacing(2);
-
-		if (appearance.m_sameTextAndGlowColor)
+		if (!appearance.m_useRGB)
 		{
-			float color[4] = {0, 0, 0, 0};
-			appearance.getTextColor(color);
+			GUI::Spacing(4);
 
-			if (ImGui::ColorEdit4("Color", &color[0], colorEditFlags))
+			if (ImGui::Checkbox("Same text & glow color", &appearance.m_sameTextAndGlowColor))
 			{
-				appearance.setTextColor(color);
-				appearance.setGlowColor(color);
+				if (appearance.m_sameTextAndGlowColor)
+				{
+					appearance.setGlowColor(appearance.m_textColor);
 
-				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
-			}
-		}
-		else
-		{
-			// text color picker
-			float textCol[4] = {0, 0, 0, 0};
-			appearance.getTextColor(textCol);
-
-			if (ImGui::ColorEdit4("Text color", &textCol[0], colorEditFlags))
-			{
-				appearance.setTextColor(textCol);
-				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+				}
 			}
 
 			GUI::Spacing(2);
 
-			// glow color picker
-			float glowCol[4] = {0, 0, 0, 0};
-			appearance.getGlowColor(glowCol);
-
-			if (ImGui::ColorEdit4("Glow color", &glowCol[0], colorEditFlags))
+			if (appearance.m_sameTextAndGlowColor)
 			{
-				appearance.setGlowColor(glowCol);
-				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+				float color[4] = {0, 0, 0, 0};
+				appearance.getTextColor(color);
+
+				if (ImGui::ColorEdit4("Color", &color[0], colorEditFlags))
+				{
+					appearance.setTextColor(color);
+					appearance.setGlowColor(color);
+
+					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+				}
+			}
+			else
+			{
+				// text color picker
+				float textCol[4] = {0, 0, 0, 0};
+				appearance.getTextColor(textCol);
+
+				if (ImGui::ColorEdit4("Text color", &textCol[0], colorEditFlags))
+				{
+					appearance.setTextColor(textCol);
+					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+				}
+
+				GUI::Spacing(2);
+
+				// glow color picker
+				float glowCol[4] = {0, 0, 0, 0};
+				appearance.getGlowColor(glowCol);
+
+				if (ImGui::ColorEdit4("Glow color", &glowCol[0], colorEditFlags))
+				{
+					appearance.setGlowColor(glowCol);
+					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+				}
 			}
 		}
 
@@ -1266,6 +1301,22 @@ ImVec4 TitleAppearance::getImGuiGlowColor() const
 	return {m_glowColor.R / 255.0f, m_glowColor.G / 255.0f, m_glowColor.B / 255.0f, m_glowColor.A / 255.0f};
 }
 
+int32_t TitleAppearance::getIntTextColor() const
+{
+	if (m_useRGB)
+		return GRainbowColor::GetDecimal();
+	else
+		return UObject::ColorToInt(m_textColor);
+}
+
+int32_t TitleAppearance::getIntGlowColor() const
+{
+	if (m_useRGB)
+		return GRainbowColor::GetDecimal();
+	else
+		return UObject::ColorToInt(m_glowColor);
+}
+
 std::string TitleAppearance::getDebugTextColorStr() const
 {
 	return std::format("R:{}-G:{}-B:{}-A:{}", m_textColor.R, m_textColor.G, m_textColor.B, m_textColor.A);
@@ -1293,6 +1344,7 @@ json TitleAppearance::toJson() const
 	j["textColor"]            = Colors::fcolorToHexRGBA(m_textColor);
 	j["glowColor"]            = Colors::fcolorToHexRGBA(m_glowColor);
 	j["sameTextAndGlowColor"] = m_sameTextAndGlowColor;
+	j["useRGB"]               = m_useRGB;
 
 	return j;
 }
@@ -1303,6 +1355,7 @@ void TitleAppearance::fromJson(const json& j)
 	m_textColor            = Colors::hexRGBAtoFColor(j.value("textColor", "0xFFFFFFFF"));
 	m_glowColor            = Colors::hexRGBAtoFColor(j.value("glowColor", "0xFFFFFFFF"));
 	m_sameTextAndGlowColor = j.value("sameTextAndGlowColor", true);
+	m_useRGB               = j.value("useRGB", false);
 }
 
 bool TitleAppearance::operator==(const TitleAppearance& other) const

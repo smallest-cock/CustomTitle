@@ -88,6 +88,7 @@ void CustomTitle::Settings_Tab()
 	auto applyOthersTitleNotif_cvar    = getCvar(Cvars::applyOthersTitleNotif);
 	auto useHueColorPicker_cvar        = getCvar(Cvars::useHueColorPicker);
 	auto showEquippedTitleDetails_cvar = getCvar(Cvars::showEquippedTitleDetails);
+	auto rgbSpeed_cvar                 = getCvar(Cvars::rgbSpeed);
 	if (!showTitleToOthers_cvar)
 		return;
 
@@ -116,6 +117,27 @@ void CustomTitle::Settings_Tab()
 	bool showEquippedTitleDetails = showEquippedTitleDetails_cvar.getBoolValue();
 	if (ImGui::Checkbox("Show extra info about equipped title in Presets tab", &showEquippedTitleDetails))
 		showEquippedTitleDetails_cvar.setValue(showEquippedTitleDetails);
+
+	GUI::Spacing(4);
+
+	// determine slider text
+	int         rgbSpeed = rgbSpeed_cvar.getIntValue();
+	std::string formatStr;
+
+	if (rgbSpeed == TitlesComponent::DEFAULT_RGB_SPEED)
+		formatStr = "default";
+	else if (rgbSpeed < TitlesComponent::DEFAULT_RGB_SPEED)
+		formatStr = std::format("{}x slower", std::abs(rgbSpeed) + 1);
+	else
+		formatStr = std::format("{}x faster", std::abs(rgbSpeed) + 1);
+
+	if (ImGui::SliderInt("RGB speed", &rgbSpeed, -14, 9, formatStr.c_str()))
+		rgbSpeed_cvar.setValue(rgbSpeed);
+
+	GUI::SameLineSpacing_relative(25);
+
+	if (ImGui::Button("Reset##rgbSpeed"))
+		rgbSpeed_cvar.setValue(TitlesComponent::DEFAULT_RGB_SPEED);
 }
 
 void CustomTitle::TitlePresets_Tab()
