@@ -1,5 +1,6 @@
 #pragma once
 #include "Component.hpp"
+#include <optional>
 
 // class TitleAppearance // i wan make class but too lazy switch to using getters/setters in TitlesComponent class
 struct TitleAppearance
@@ -18,8 +19,9 @@ public:
 	}
 	TitleAppearance(const FPlayerTitleData& data) { updateFromPlayerTitleData(data); }
 
-	void             updateFromPlayerTitleData(const FPlayerTitleData& data);
-	FPlayerTitleData toTitleData(const FName& id) const;
+	void                                  updateFromPlayerTitleData(const FPlayerTitleData& data);
+	static std::optional<TitleAppearance> fromEncodedStr(const std::string& str); // factory func
+	FPlayerTitleData                      toTitleData(const FName& id) const;
 
 	// getters
 	std::string getText() const { return m_text; }
@@ -72,6 +74,7 @@ public:
 	ConstIterator find(UGFxData_PRI_TA* player) const;
 	ConstIterator end() const;
 	void          clear();
+	bool          rgbPresetsExist() const;
 
 	// Per-frame iteration over RGB presets
 	template <typename Func> void forEachRGBPreset(Func&& func)
@@ -155,14 +158,13 @@ private:
 	static UGFxData_PRI_TA* getUserGFxPRI(); // in-game
 	static UGFxData_PRI_TA* getGFxPriFromChatData(APlayerReplicationInfo* priBase, AHUDBase_TA* hudBase);
 
-	static bool decodeAppearance(const std::string& inStr, TitleAppearance& outAppearance);
 	static void sendTitleDataChat(const TitleAppearance& appearance, APlayerController* pc = nullptr);
 
 public:
 	static constexpr int DEFAULT_RGB_SPEED = 0;
 
 	void             handleUnload();
-	TitleAppearance* getActivePreset();
+	TitleAppearance* getActivePreset(bool log = true);
 
 	void spawnSelectedPreset(bool log = false);
 	void applySelectedAppearanceToUser();

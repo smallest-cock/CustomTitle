@@ -1,8 +1,6 @@
 #pragma once
 #include "pch.h"
-#include <RLSDK/RLSDK_w_pch_includes/SdkHeaders.hpp>
 #include <ModUtils/util/Utils.hpp>
-
 
 static constexpr int32_t INSTANCES_INTERATE_OFFSET = 10;
 
@@ -20,23 +18,21 @@ public:
 	uintptr_t FindPattern(HMODULE module, const unsigned char* pattern, const char* mask);
 	uintptr_t GetGNamesAddress();
 	uintptr_t GetGObjectsAddress();
-	void InitGlobals();
-	bool AreGObjectsValid();
-	bool AreGNamesValid();
-	bool CheckGlobals();
+	bool      InitGlobals();
+	bool      AreGObjectsValid();
+	bool      AreGNamesValid();
+	bool      CheckGlobals();
 
 private:
-	std::map<std::string, class UClass*> m_staticClasses;
+	std::map<std::string, class UClass*>    m_staticClasses;
 	std::map<std::string, class UFunction*> m_staticFunctions;
-	std::vector<class UObject*> m_createdObjects;
+	std::vector<class UObject*>             m_createdObjects;
 
-	bool CheckNotInName(UObject* obj, const std::string& str) {
-		return obj->GetFullName().find(str) == std::string::npos;
-	}
+	bool CheckNotInName(UObject* obj, const std::string& str) { return obj->GetFullName().find(str) == std::string::npos; }
 
 public:
 	// Get the default constructor of a class type. Example: UGameData_TA* gameData = GetDefaultInstanceOf<UGameData_TA>();
-	template<typename T> T* GetDefaultInstanceOf()
+	template <typename T> T* GetDefaultInstanceOf()
 	{
 		if (std::is_base_of<UObject, T>::value)
 		{
@@ -58,7 +54,7 @@ public:
 	}
 
 	// Get the most current/active instance of a class. Example: UEngine* engine = GetInstanceOf<UEngine>();
-	template<typename T> T* GetInstanceOf()
+	template <typename T> T* GetInstanceOf()
 	{
 		if (!std::is_base_of<UObject, T>::value)
 			return nullptr;
@@ -78,8 +74,9 @@ public:
 		return nullptr;
 	}
 
-	// Get the most current/active instance of a class, if one isn't found it creates a new instance. Example: UEngine* engine = GetInstanceOf<UEngine>();
-	template<typename T> T* GetOrCreateInstance()
+	// Get the most current/active instance of a class, if one isn't found it creates a new instance. Example: UEngine* engine =
+	// GetInstanceOf<UEngine>();
+	template <typename T> T* GetOrCreateInstance()
 	{
 		if (std::is_base_of<UObject, T>::value)
 		{
@@ -89,8 +86,9 @@ public:
 
 				if (uObject && uObject->IsA<T>())
 				{
-					//if (uObject->GetFullName().find("Default__") == std::string::npos)
-					if (CheckNotInName(uObject, "Default") && CheckNotInName(uObject, "Archetype") && CheckNotInName(uObject, "PostGameLobby") && CheckNotInName(uObject, "Test"))
+					// if (uObject->GetFullName().find("Default__") == std::string::npos)
+					if (CheckNotInName(uObject, "Default") && CheckNotInName(uObject, "Archetype") &&
+					    CheckNotInName(uObject, "PostGameLobby") && CheckNotInName(uObject, "Test"))
 					{
 						return static_cast<T*>(uObject);
 					}
@@ -104,7 +102,7 @@ public:
 	}
 
 	// Get all active instances of a class type. Example: std::vector<APawn*> pawns = GetAllInstancesOf<APawn>();
-	template<typename T> std::vector<T*> GetAllInstancesOf()
+	template <typename T> std::vector<T*> GetAllInstancesOf()
 	{
 		std::vector<T*> objectInstances;
 
@@ -129,7 +127,7 @@ public:
 	}
 
 	// Get all default instances of a class type.
-	template<typename T> std::vector<T*> GetAllDefaultInstancesOf()
+	template <typename T> std::vector<T*> GetAllDefaultInstancesOf()
 	{
 		std::vector<T*> objectInstances;
 
@@ -153,7 +151,7 @@ public:
 	}
 
 	// Get an object instance by it's name and class type. Example: UTexture2D* texture = FindObject<UTexture2D>("WhiteSquare");
-	template<typename T> T* FindObject(const std::string& objectName, bool bStrictFind = false)
+	template <typename T> T* FindObject(const std::string& objectName, bool bStrictFind = false)
 	{
 		if (!std::is_base_of<UObject, T>::value)
 			return nullptr;
@@ -178,8 +176,9 @@ public:
 		return nullptr;
 	}
 
-	// Get all object instances by it's name and class type. Example: std::vector<UTexture2D*> textures = FindAllObjects<UTexture2D>("Noise");
-	template<typename T> std::vector<T*> FindAllObjects(const std::string& objectName)
+	// Get all object instances by it's name and class type. Example: std::vector<UTexture2D*> textures =
+	// FindAllObjects<UTexture2D>("Noise");
+	template <typename T> std::vector<T*> FindAllObjects(const std::string& objectName)
 	{
 		std::vector<T*> objectInstances;
 
@@ -202,11 +201,11 @@ public:
 		return objectInstances;
 	}
 
-
 	// ============================================ CUSTOM SHIT ============================================
-	
+
 	// Get all object instances of a class type that contain one of the search terms in its full name
-	template<typename T> std::vector<T*> FindAllObjectsThatMatch(const std::vector<std::string>& searchTerms, const std::vector<std::string>& avoidTerms = {})
+	template <typename T>
+	std::vector<T*> FindAllObjectsThatMatch(const std::vector<std::string>& searchTerms, const std::vector<std::string>& avoidTerms = {})
 	{
 		std::vector<T*> objectInstances;
 
@@ -240,7 +239,7 @@ public:
 								objectInstances.push_back(static_cast<T*>(uObject));
 							}
 
-							break;	// stop looping thru search terms
+							break; // stop looping thru search terms
 						}
 					}
 				}
@@ -278,7 +277,7 @@ public:
 		std::string objTypeName = typeid(T).name();
 
 		// Remove "class " or "struct " if present
-		const std::string classPrefix = "class ";
+		const std::string classPrefix  = "class ";
 		const std::string structPrefix = "struct ";
 
 		if (objTypeName.rfind(classPrefix, 0) == 0)
@@ -302,14 +301,14 @@ public:
 	// Creates a new transient instance of a class which then adds it to globals.
 	// YOU are required to make sure these objects eventually get eaten up by the garbage collector in some shape or form.
 	// Example: UObject* newObject = CreateInstance<UObject>();
-	template<typename T> T* CreateInstance()
+	template <typename T> T* CreateInstance()
 	{
 		T* returnObject = nullptr;
 
 		if (std::is_base_of<UObject, T>::value)
 		{
-			T* defaultObject = GetDefaultInstanceOf<T>();
-			UClass* staticClass = T::StaticClass();
+			T*      defaultObject = GetDefaultInstanceOf<T>();
+			UClass* staticClass   = T::StaticClass();
 
 			if (defaultObject && staticClass)
 			{
@@ -334,43 +333,39 @@ public:
 	void MarkForDestroy(class UObject* object);
 
 private:
-	class UCanvas* I_UCanvas;
-	class AHUD* I_AHUD;
+	class UCanvas*             I_UCanvas;
+	class AHUD*                I_AHUD;
 	class UGameViewportClient* I_UGameViewportClient;
-	class APlayerController* I_APlayerController;
+	class APlayerController*   I_APlayerController;
 
 public: // Use these functions to access these specific class instances, they will be set automatically; always remember to null check!
-	class UEngine* IUEngine();
-	class UAudioDevice* IUAudioDevice();
-	class AWorldInfo* IAWorldInfo();
-	class UCanvas* IUCanvas();
-	class AHUD* IAHUD();
+	class UEngine*             IUEngine();
+	class UAudioDevice*        IUAudioDevice();
+	class AWorldInfo*          IAWorldInfo();
+	class UCanvas*             IUCanvas();
+	class AHUD*                IAHUD();
 	class UGameViewportClient* IUGameViewportClient();
-	class ULocalPlayer* IULocalPlayer();
-	class APlayerController* IAPlayerController();
-	class UFileSystem* IUFileSystem();
-	struct FUniqueNetId GetUniqueID();
+	class ULocalPlayer*        IULocalPlayer();
+	class APlayerController*   IAPlayerController();
+	class UFileSystem*         IUFileSystem();
+	struct FUniqueNetId        GetUniqueID();
 
 public:
-	AGFxHUD_TA* hud = nullptr;
-	UGFxDataStore_X* dataStore = nullptr;
-	USaveData_TA* saveData = nullptr;
+	AGFxHUD_TA*      hud          = nullptr;
+	UGFxDataStore_X* dataStore    = nullptr;
+	USaveData_TA*    saveData     = nullptr;
 	UOnlinePlayer_X* onlinePlayer = nullptr;
 
-
 public:
-	AGFxHUD_TA* GetHUD();
+	AGFxHUD_TA*      GetHUD();
 	UGFxDataStore_X* GetDataStore();
-	USaveData_TA* GetSaveData();
+	USaveData_TA*    GetSaveData();
 	UOnlinePlayer_X* GetOnlinePlayer();
 
 public:
 	void SpawnNotification(const std::string& title, const std::string& content, int duration, bool log = false);
-	
-	inline FString censorStringToFString(const FString& rawStr)
-	{
-		return UOnlineGameWordFilter_X::SanitizePhrase(rawStr);
-	}
+
+	inline FString censorStringToFString(const FString& rawStr) { return UOnlineGameWordFilter_X::SanitizePhrase(rawStr); }
 
 	inline FString censorStringToFString(const std::string& rawStr)
 	{
@@ -379,16 +374,9 @@ public:
 		return censorStringToFString(FString::create(rawStr));
 	}
 
-	inline std::string censorString(const FString& rawStr)
-	{
-		return UOnlineGameWordFilter_X::SanitizePhrase(rawStr).ToString();
-	}
+	inline std::string censorString(const FString& rawStr) { return UOnlineGameWordFilter_X::SanitizePhrase(rawStr).ToString(); }
 
-	inline std::string censorString(const std::string& rawStr)
-	{ 
-		return censorString(FString::create(rawStr));
-	}
+	inline std::string censorString(const std::string& rawStr) { return censorString(FString::create(rawStr)); }
 };
-
 
 extern class InstancesComponent Instances;

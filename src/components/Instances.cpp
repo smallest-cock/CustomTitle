@@ -1,17 +1,16 @@
 #include "pch.h"
 #include "Instances.hpp"
 
-
 InstancesComponent::InstancesComponent() { OnCreate(); }
 
 InstancesComponent::~InstancesComponent() { OnDestroy(); }
 
 void InstancesComponent::OnCreate()
 {
-	I_UCanvas = nullptr;
-	I_AHUD = nullptr;
+	I_UCanvas             = nullptr;
+	I_AHUD                = nullptr;
 	I_UGameViewportClient = nullptr;
-	I_APlayerController = nullptr;
+	I_APlayerController   = nullptr;
 }
 
 void InstancesComponent::OnDestroy()
@@ -23,25 +22,24 @@ void InstancesComponent::OnDestroy()
 	{
 		if (!uObject)
 			continue;
-	
+
 		MarkForDestroy(uObject);
 	}
 
 	m_createdObjects.clear();
 }
 
-
 // ========================================= init RLSDK globals ===========================================
 
 uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* pattern, const char* mask)
 {
-	MODULEINFO info = { };
+	MODULEINFO info = {};
 	GetModuleInformation(GetCurrentProcess(), module, &info, sizeof(MODULEINFO));
 
-	uintptr_t start = reinterpret_cast<uintptr_t>(module);
-	size_t length = info.SizeOfImage;
+	uintptr_t start  = reinterpret_cast<uintptr_t>(module);
+	size_t    length = info.SizeOfImage;
 
-	size_t pos = 0;
+	size_t pos        = 0;
 	size_t maskLength = std::strlen(mask) - 1;
 
 	for (uintptr_t retAddress = start; retAddress < start + length; retAddress++)
@@ -66,23 +64,22 @@ uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* p
 uintptr_t InstancesComponent::GetGNamesAddress()
 {
 	unsigned char GNamesPattern[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x35\x25\x02\x00";
-	char GNamesMask[] = "??????xx??xxxxxx";
+	char          GNamesMask[]    = "??????xx??xxxxxx";
 
 	auto GNamesAddress = FindPattern(GetModuleHandle(L"RocketLeague.exe"), GNamesPattern, GNamesMask);
 
 	return GNamesAddress;
 }
 
-uintptr_t InstancesComponent::GetGObjectsAddress()
-{
-	return GetGNamesAddress() + 0x48;
-}
+uintptr_t InstancesComponent::GetGObjectsAddress() { return GetGNamesAddress() + 0x48; }
 
-void InstancesComponent::InitGlobals()
+bool InstancesComponent::InitGlobals()
 {
 	uintptr_t gnamesAddr = GetGNamesAddress();
 	GNames               = reinterpret_cast<TArray<FNameEntry*>*>(gnamesAddr);
 	GObjects             = reinterpret_cast<TArray<UObject*>*>(gnamesAddr + 0x48);
+
+	return CheckGlobals();
 }
 
 bool InstancesComponent::AreGObjectsValid()
@@ -121,7 +118,6 @@ bool InstancesComponent::CheckGlobals()
 }
 
 // ===========================================================================================================
-
 
 class UClass* InstancesComponent::FindStaticClass(const std::string& className)
 {
@@ -201,40 +197,19 @@ void InstancesComponent::MarkForDestroy(class UObject* object)
 		m_createdObjects.erase(objectIt);
 }
 
-class UEngine* InstancesComponent::IUEngine()
-{
-	return UEngine::GetEngine();
-}
+class UEngine* InstancesComponent::IUEngine() { return UEngine::GetEngine(); }
 
-class UAudioDevice* InstancesComponent::IUAudioDevice()
-{
-	return UEngine::GetAudioDevice();
-}
+class UAudioDevice* InstancesComponent::IUAudioDevice() { return UEngine::GetAudioDevice(); }
 
-class AWorldInfo* InstancesComponent::IAWorldInfo()
-{
-	return UEngine::GetCurrentWorldInfo();
-}
+class AWorldInfo* InstancesComponent::IAWorldInfo() { return UEngine::GetCurrentWorldInfo(); }
 
-class UCanvas* InstancesComponent::IUCanvas()
-{
-	return I_UCanvas;
-}
+class UCanvas* InstancesComponent::IUCanvas() { return I_UCanvas; }
 
-class AHUD* InstancesComponent::IAHUD()
-{
-	return I_AHUD;
-}
+class AHUD* InstancesComponent::IAHUD() { return I_AHUD; }
 
-class UFileSystem* InstancesComponent::IUFileSystem()
-{
-	return (UFileSystem*)UFileSystem::StaticClass();
-}
+class UFileSystem* InstancesComponent::IUFileSystem() { return (UFileSystem*)UFileSystem::StaticClass(); }
 
-class UGameViewportClient* InstancesComponent::IUGameViewportClient()
-{
-	return I_UGameViewportClient;
-}
+class UGameViewportClient* InstancesComponent::IUGameViewportClient() { return I_UGameViewportClient; }
 
 class ULocalPlayer* InstancesComponent::IULocalPlayer()
 {
@@ -269,7 +244,6 @@ struct FUniqueNetId InstancesComponent::GetUniqueID()
 
 	return FUniqueNetId{};
 }
-
 
 // ======================= get instance funcs =========================
 
@@ -313,13 +287,13 @@ UOnlinePlayer_X* InstancesComponent::GetOnlinePlayer()
 	return onlinePlayer;
 }
 
-
 // ====================================== misc funcs ================================================
 
 void InstancesComponent::SpawnNotification(const std::string& title, const std::string& content, int duration, bool log)
 {
 	UNotificationManager_TA* notificationManager = Instances.GetInstanceOf<UNotificationManager_TA>();
-	if (!notificationManager) return;
+	if (!notificationManager)
+		return;
 
 	static UClass* notificationClass = nullptr;
 	if (!notificationClass)
@@ -328,9 +302,10 @@ void InstancesComponent::SpawnNotification(const std::string& title, const std::
 	}
 
 	UNotification_TA* notification = notificationManager->PopUpOnlyNotification(notificationClass);
-	if (!notification) return;
+	if (!notification)
+		return;
 
-	FString titleFStr = FString::create(title);
+	FString titleFStr   = FString::create(title);
 	FString contentFStr = FString::create(content);
 
 	notification->SetTitle(titleFStr);
@@ -343,6 +318,4 @@ void InstancesComponent::SpawnNotification(const std::string& title, const std::
 	}
 }
 
-
-
-class InstancesComponent Instances {};
+class InstancesComponent Instances{};

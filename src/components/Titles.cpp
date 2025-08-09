@@ -50,30 +50,40 @@ void TitlesComponent::hookFunctions()
 	hookWithCallerPost(Events::HUDBase_TA_DrawHUD,
 	    [this](ActorWrapper Caller, ...)
 	    {
-		    auto* caller = reinterpret_cast<AHUDBase_TA*>(Caller.memory_address);
-		    if (!validUObject(caller))
+		    TitleAppearance* preset            = getActivePreset(false);
+		    bool             bannerHasRGB      = preset && preset->useRGB();
+		    bool             gameHasRGBPresets = m_ingamePresets.rgbPresetsExist();
+
+		    if (!bannerHasRGB && !gameHasRGBPresets)
 			    return;
 
 		    tickRGB();
 
-		    TitleAppearance* preset = getActivePreset();
-		    if (!preset || !preset->useRGB())
-			    return;
-
-		    applyPresetToBanner(*preset, caller->Shell);
+		    // update RGB preset on banner
+		    if (bannerHasRGB)
+		    {
+			    auto* caller = reinterpret_cast<AHUDBase_TA*>(Caller.memory_address);
+			    if (!validUObject(caller))
+				    return;
+			    applyPresetToBanner(*preset, caller->Shell);
+		    }
 
 		    // update RGB presets in-game
-		    m_ingamePresets.forEachRGBPreset(
-		        [this](UGFxData_PRI_TA* pri, const TitleAppearance& preset)
-		        {
-			        if (!validUObject(pri))
-				        return;
+		    if (gameHasRGBPresets)
+		    {
+			    int32_t rgbColor = GRainbowColor::GetDecimal();
+			    m_ingamePresets.forEachRGBPreset(
+			        [this, rgbColor](UGFxData_PRI_TA* pri, const TitleAppearance& preset)
+			        {
+				        if (!validUObject(pri))
+					        return;
 
-			        GfxWrapper gfxPri{pri};
-			        gfxPri.set_string(L"XPTitle", preset.getTextFStr());
-			        gfxPri.set_int(L"TitleColor", preset.getIntTextColor());
-			        gfxPri.set_int(L"TitleGlowColor", preset.getIntGlowColor());
-		        });
+				        GfxWrapper gfxPri{pri};
+				        gfxPri.set_string(L"XPTitle", preset.getTextFStr());
+				        gfxPri.set_int(L"TitleColor", rgbColor);
+				        gfxPri.set_int(L"TitleGlowColor", rgbColor);
+			        });
+		    }
 	    });
 
 	hookWithCaller(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
@@ -309,6 +319,7 @@ void TitlesComponent::handleUnload()
 
 	// restore equipped title's OG appearance...
 	// banner
+	applyPresetToBanner(m_currentOgAppearance);
 	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
 	if (pt)
 	{
@@ -317,11 +328,18 @@ void TitlesComponent::handleUnload()
 	}
 
 	// in-game
-	auto* pri = getUserGFxPRI();
-	if (!pri)
+	auto* hud = getGFxHUD();
+	if (!hud)
 		return;
-	applyPresetToPri(pri, m_currentOgAppearance);
-	LOG("(unload) Restored OG banner appearance");
+
+	for (auto* pri : hud->PRIData)
+	{
+		if (!validUObject(pri))
+			continue;
+
+		pri->HandleTitleChanged(pri->PRI); // resets to default title
+		LOG("(unload) Restored OG in-game appearance for PRI: {}", pri->PlayerName.ToString());
+	}
 }
 
 void TitlesComponent::updateGameTitleAppearances(UTitleConfig_X* config, bool forceSearch)
@@ -389,16 +407,18 @@ void TitlesComponent::refreshPriTitlePresets(AGFxHUD_TA* hud)
 	DELAY(0.1f, { applyExistingPresetsToPris(); }, applyExistingPresetsToPris);
 }
 
-TitleAppearance* TitlesComponent::getActivePreset()
+TitleAppearance* TitlesComponent::getActivePreset(bool log)
 {
 	if (m_titlePresets.empty())
 	{
-		LOG("There are no existing title presets...");
+		if (log)
+			LOG("There are no existing title presets...");
 		return nullptr;
 	}
 	if (m_activePresetIndex >= m_titlePresets.size())
 	{
-		LOG("ERROR: Active preset index is out of range: {}", m_activePresetIndex);
+		if (log)
+			LOG("ERROR: Active preset index is out of range: {}", m_activePresetIndex);
 		return nullptr;
 	}
 
@@ -420,7 +440,8 @@ void TitlesComponent::applySelectedAppearanceToUser()
 		return;
 
 	m_ingamePresets.addPreset(pri, *title);
-	applyPresetToPri(pri, *title);
+	if (!title->useRGB())
+		applyPresetToPri(pri, *title);
 }
 
 void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller)
@@ -448,12 +469,13 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 	if (!gfxPri)
 		return;
 
-	TitleAppearance appearance; // default appearance
-	if (!decodeAppearance(data, appearance))
+	auto appearanceOpt = TitleAppearance::fromEncodedStr(data);
+	if (!appearanceOpt)
 	{
 		LOG("ERROR: Unable to parse title appearance from string: \"{}\"", Format::EscapeBraces(data));
 		return;
 	}
+	TitleAppearance appearance = *appearanceOpt;
 
 	std::string senderName = msg.PlayerName.ToString();
 	std::string successMsg = "Applied title appearance for " + senderName;
@@ -891,37 +913,6 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance& appearance, APlay
 	LOG("Sent title data chat: \"{}\"", Format::EscapeBraces(titleDataStr));
 }
 
-bool TitlesComponent::decodeAppearance(const std::string& inStr, TitleAppearance& outAppearance)
-{
-	auto parts = Format::SplitStr(inStr, '|');
-	if (parts.size() != 4) // invalid format, ignore
-		return false;
-
-	/*
-	    LOG("parts[0]: \"{}\"", parts[0]);
-	    LOG("parts[1]: \"{}\"", parts[1]);
-	    LOG("parts[2]: \"{}\"", parts[2]);
-	*/
-
-	outAppearance.setText(parts[0]);
-	outAppearance.setTextColor(Colors::hexToFColor(parts[1]));
-
-	if (parts[2] == "-")
-	{
-		outAppearance.setGlowColor(outAppearance.getTextFColor());
-		outAppearance.setSameTextAndGlowColor(true);
-	}
-	else
-	{
-		outAppearance.setGlowColor(Colors::hexToFColor(parts[2]));
-		outAppearance.setSameTextAndGlowColor(false);
-	}
-
-	outAppearance.setUseRGB(parts[3] == "1");
-
-	return true;
-}
-
 // ##############################################################################################################
 // ##########################################   DISPLAY FUNCTIONS    ############################################
 // ##############################################################################################################
@@ -1070,8 +1061,7 @@ void TitlesComponent::display_titlePresetInfo()
 
 		if (ImGui::Checkbox("RGB", &appearance.m_useRGB))
 		{
-			if (!appearance.m_useRGB)
-				GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
+			GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 		}
 
 		if (!appearance.m_useRGB)
@@ -1277,6 +1267,35 @@ void TitleAppearance::updateFromPlayerTitleData(const FPlayerTitleData& data)
 	                         (m_textColor.A == m_glowColor.A);
 }
 
+std::optional<TitleAppearance> TitleAppearance::fromEncodedStr(const std::string& str)
+{
+	auto parts = Format::SplitStr(str, '|');
+	if (parts.size() != 3 && parts.size() != 4)
+		return std::nullopt; // invalid format
+
+	TitleAppearance appearance;
+	appearance.setText(parts[0]);
+	appearance.setTextColor(Colors::hexToFColor(parts[1]));
+
+	if (parts[2] == "-")
+	{
+		appearance.setGlowColor(appearance.getTextFColor());
+		appearance.setSameTextAndGlowColor(true);
+	}
+	else
+	{
+		appearance.setGlowColor(Colors::hexToFColor(parts[2]));
+		appearance.setSameTextAndGlowColor(false);
+	}
+
+	if (parts.size() == 4)
+		appearance.setUseRGB(parts[3] == "1");
+	else
+		LOG("WARNING: Looks like someone is using an old version of the mod that doesn't support RGB (pre v1.1.0)");
+
+	return appearance;
+}
+
 FPlayerTitleData TitleAppearance::toTitleData(const FName& id) const
 {
 	FPlayerTitleData data{};
@@ -1424,5 +1443,7 @@ void InGamePresetManager::clear()
 	m_allPresets.clear();
 	m_rgbPresets.clear();
 }
+
+bool InGamePresetManager::rgbPresetsExist() const { return !m_rgbPresets.empty(); }
 
 class TitlesComponent Titles{};

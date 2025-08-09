@@ -10,8 +10,7 @@ void CustomTitle::onLoad()
 {
 	_globalCvarManager = cvarManager;
 
-	Instances.InitGlobals(); // initialize RLSDK globals
-	if (!Instances.CheckGlobals())
+	if (!Instances.InitGlobals())
 		return;
 
 	pluginInit();
@@ -42,6 +41,8 @@ void CustomTitle::pluginInit()
 
 	Titles.Initialize(gameWrapper);
 	Textures.Initialize(gameWrapper);
+
+	UFunction::FindFunction("dummy to trigger function cache");
 }
 
 void CustomTitle::initCvars() {}

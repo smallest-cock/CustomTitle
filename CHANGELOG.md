@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.0
+- Added the option for an RGB effect
+
 ## v1.0.9
 - Fixed custom titles not being applied when a tournament title is equipped
 - Added equipped title info in the Presets tab
