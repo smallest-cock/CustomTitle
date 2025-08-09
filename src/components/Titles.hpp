@@ -41,6 +41,7 @@ public:
 	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
 	void setGlowColor(const float (&newCol)[4]) { m_glowColor = Colors::toFColor(newCol); }
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
+	void setUseRGB(bool val) { m_useRGB = val; }
 
 	std::string getDebugTextColorStr() const;
 	std::string getDebugGlowColorStr() const;
@@ -56,6 +57,35 @@ struct GameTitleAppearance : TitleAppearance
 
 	GameTitleAppearance() {}
 	GameTitleAppearance(int32_t id, const FPlayerTitleData& data) : TitleAppearance(data), idFnameEntry(id) {}
+};
+
+class InGamePresetManager
+{
+public:
+	using PresetMap     = std::unordered_map<UGFxData_PRI_TA*, TitleAppearance>;
+	using Iterator      = PresetMap::iterator;
+	using ConstIterator = PresetMap::const_iterator;
+
+	void          addPreset(UGFxData_PRI_TA* player, const TitleAppearance& appearance);
+	void          removePreset(UGFxData_PRI_TA* player);
+	bool          contains(UGFxData_PRI_TA* player) const;
+	ConstIterator find(UGFxData_PRI_TA* player) const;
+	ConstIterator end() const;
+	void          clear();
+
+	// Per-frame iteration over RGB presets
+	template <typename Func> void forEachRGBPreset(Func&& func)
+	{
+		for (auto it : m_rgbPresets)
+			func(it->first, it->second);
+	}
+
+private:
+	PresetMap             m_allPresets;
+	std::vector<Iterator> m_rgbPresets;
+
+	bool inRGBList(Iterator it);
+	void removeFromRGBList(Iterator it);
 };
 
 class TitlesComponent : Component<TitlesComponent>
@@ -92,14 +122,10 @@ private:
 	TitleAppearance                  m_currentOgAppearance;
 	std::vector<TitleAppearance>     m_titlePresets;
 	std::vector<GameTitleAppearance> m_gameTitles; // vector preserves the order that they were found in the title config
-	std::unordered_map<UGFxData_PRI_TA*, TitleAppearance>
-	    m_ingameCustomPresets; // <--- or APRI_TA* as the key if that works better, with the chat data nd all that
+	InGamePresetManager              m_ingamePresets;
 
 	bool        m_shouldOverwriteGetTitleDataReturnVal = false; // what a name
 	std::string m_selectedTitleId;
-
-	// experimental
-	std::vector<UGFxData_PRI_TA*> m_playersWithRGBPresets; // TODO: use in similar way to m_ingameCustomPresets
 
 private:
 	void            addNewPreset();

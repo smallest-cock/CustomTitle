@@ -62,7 +62,18 @@ void TitlesComponent::hookFunctions()
 
 		    applyPresetToBanner(*preset, caller->Shell);
 
-		    // TODO: update RGB presets in-game
+		    // update RGB presets in-game
+		    m_ingamePresets.forEachRGBPreset(
+		        [this](UGFxData_PRI_TA* pri, const TitleAppearance& preset)
+		        {
+			        if (!validUObject(pri))
+				        return;
+
+			        GfxWrapper gfxPri{pri};
+			        gfxPri.set_string(L"XPTitle", preset.getTextFStr());
+			        gfxPri.set_int(L"TitleColor", preset.getIntTextColor());
+			        gfxPri.set_int(L"TitleGlowColor", preset.getIntGlowColor());
+		        });
 	    });
 
 	hookWithCaller(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
@@ -234,7 +245,7 @@ void TitlesComponent::hookFunctions()
 
 	hookEventPost(Events::GFxData_PRI_TA_SetPlayerTitle, [this](...) { refreshPriTitlePresets(); });
 
-	hookEventPost(Events::EngineShare_X_EventPreLoadMap, [this](...) { m_ingameCustomPresets.clear(); });
+	hookEventPost(Events::EngineShare_X_EventPreLoadMap, [this](...) { m_ingamePresets.clear(); });
 
 	hookEvent(Events::PlayerController_EnterStartState,
 	    [this](...)
@@ -249,7 +260,7 @@ void TitlesComponent::hookFunctions()
 		    if (!title)
 			    return;
 
-		    m_ingameCustomPresets[userPri] = *title;
+		    m_ingamePresets.addPreset(userPri, *title);
 
 		    LOG("Added user gfxPri to m_ingameCustomPresets...");
 	    });
@@ -366,8 +377,8 @@ void TitlesComponent::refreshPriTitlePresets(AGFxHUD_TA* hud)
 			if (!pri)
 				continue;
 
-			auto it = m_ingameCustomPresets.find(pri);
-			if (it == m_ingameCustomPresets.end())
+			auto it = m_ingamePresets.find(pri);
+			if (it == m_ingamePresets.end())
 				continue;
 
 			applyPresetToPri(pri, it->second);
@@ -408,7 +419,7 @@ void TitlesComponent::applySelectedAppearanceToUser()
 	if (!pri)
 		return;
 
-	m_ingameCustomPresets[pri] = *title; // update active preset in m_ingameCustomPresets
+	m_ingamePresets.addPreset(pri, *title);
 	applyPresetToPri(pri, *title);
 }
 
@@ -475,7 +486,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 				        Format::EscapeBraces(oldText),
 				        Format::EscapeBraces(title.getText()));
 
-				    m_ingameCustomPresets[gfxPri] = title;
+				    m_ingamePresets.addPreset(gfxPri, title);
 				    refreshPriTitlePresets(hud);
 				    // applyPresetToPri(gfxPri, title);
 
@@ -499,7 +510,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 	}
 	else
 	{
-		m_ingameCustomPresets[gfxPri] = appearance;
+		m_ingamePresets.addPreset(gfxPri, appearance);
 		refreshPriTitlePresets(hud);
 		// applyPresetToPri(gfxPri, appearance);
 
@@ -883,7 +894,7 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance& appearance, APlay
 bool TitlesComponent::decodeAppearance(const std::string& inStr, TitleAppearance& outAppearance)
 {
 	auto parts = Format::SplitStr(inStr, '|');
-	if (parts.size() < 3) // invalid format, ignore
+	if (parts.size() != 4) // invalid format, ignore
 		return false;
 
 	/*
@@ -905,6 +916,8 @@ bool TitlesComponent::decodeAppearance(const std::string& inStr, TitleAppearance
 		outAppearance.setGlowColor(Colors::hexToFColor(parts[2]));
 		outAppearance.setSameTextAndGlowColor(false);
 	}
+
+	outAppearance.setUseRGB(parts[3] == "1");
 
 	return true;
 }
@@ -1327,13 +1340,14 @@ std::string TitleAppearance::getDebugGlowColorStr() const
 	return std::format("R:{}-G:{}-B:{}-A:{}", m_glowColor.R, m_glowColor.G, m_glowColor.B, m_glowColor.A);
 }
 
-// Will output "title:My custom text|FF8040FF|00FF00FF" ... or "title:My custom text|FF8040FF|-" if m_sameTextAndGlowColor is true
+// Will output "title:My custom text|FF8040FF|00FF00FF|0" ... or "title:My custom text|FF8040FF|-|1" if m_sameTextAndGlowColor is true
 std::string TitleAppearance::toEncodedString() const
 {
-	constexpr const char* prefix = "title:";
-
-	return std::format(
-	    "{}{}|{}|{}", prefix, m_text, Colors::fcolorToHex(m_textColor), m_sameTextAndGlowColor ? "-" : Colors::fcolorToHex(m_glowColor));
+	return std::format("title:{}|{}|{}|{}",
+	    m_text,
+	    Colors::fcolorToHex(m_textColor),
+	    m_sameTextAndGlowColor ? "-" : Colors::fcolorToHex(m_glowColor),
+	    m_useRGB ? "1" : "0");
 }
 
 json TitleAppearance::toJson() const
@@ -1363,6 +1377,52 @@ bool TitleAppearance::operator==(const TitleAppearance& other) const
 	return (m_text == other.m_text) &&
 	       (m_textColor.R == other.m_textColor.R && m_textColor.G == other.m_textColor.G && m_textColor.B == other.m_textColor.B) &&
 	       (m_glowColor.R == other.m_glowColor.R && m_glowColor.G == other.m_glowColor.G && m_glowColor.B == other.m_glowColor.B);
+}
+
+// ##############################################################################################################
+// #######################################    InGamePresetManager    ############################################
+// ##############################################################################################################
+
+void InGamePresetManager::addPreset(UGFxData_PRI_TA* player, const TitleAppearance& appearance)
+{
+	auto [it, inserted] = m_allPresets.emplace(player, appearance);
+	if (!inserted)
+		it->second = appearance;
+
+	if (appearance.useRGB())
+	{
+		if (!inRGBList(it))
+			m_rgbPresets.push_back(it);
+	}
+	else
+		removeFromRGBList(it);
+}
+
+void InGamePresetManager::removePreset(UGFxData_PRI_TA* player)
+{
+	auto it = m_allPresets.find(player);
+	if (it == m_allPresets.end())
+		return;
+	removeFromRGBList(it);
+	m_allPresets.erase(it);
+}
+
+bool InGamePresetManager::inRGBList(Iterator it) { return std::find(m_rgbPresets.begin(), m_rgbPresets.end(), it) != m_rgbPresets.end(); }
+
+void InGamePresetManager::removeFromRGBList(Iterator it)
+{
+	m_rgbPresets.erase(std::remove(m_rgbPresets.begin(), m_rgbPresets.end(), it), m_rgbPresets.end());
+}
+
+bool InGamePresetManager::contains(UGFxData_PRI_TA* player) const { return m_allPresets.contains(player); }
+
+InGamePresetManager::ConstIterator InGamePresetManager::find(UGFxData_PRI_TA* player) const { return m_allPresets.find(player); }
+InGamePresetManager::ConstIterator InGamePresetManager::end() const { return m_allPresets.end(); }
+
+void InGamePresetManager::clear()
+{
+	m_allPresets.clear();
+	m_rgbPresets.clear();
 }
 
 class TitlesComponent Titles{};
