@@ -77,28 +77,3 @@ void CustomTitle::autoRunCommandInterval(
 
 	runCommandInterval(command, numIntervals, delaySeconds, delayFirstCommand);
 }
-
-// hooks
-void CustomTitle::hookEvent(const char* funcName, std::function<void(std::string)> callback)
-{
-	gameWrapper->HookEvent(funcName, callback);
-	LOG("Hooked function pre: \"{}\"", funcName);
-}
-
-void CustomTitle::hookEventPost(const char* funcName, std::function<void(std::string)> callback)
-{
-	gameWrapper->HookEventPost(funcName, callback);
-	LOG("Hooked function post: \"{}\"", funcName);
-}
-
-void CustomTitle::hookWithCaller(const char* funcName, std::function<void(ActorWrapper, void*, std::string)> callback)
-{
-	gameWrapper->HookEventWithCaller<ActorWrapper>(funcName, callback);
-	LOG("Hooked function pre: \"{}\"", funcName);
-}
-
-void CustomTitle::hookWithCallerPost(const char* funcName, std::function<void(ActorWrapper, void*, std::string)> callback)
-{
-	gameWrapper->HookEventWithCallerPost<ActorWrapper>(funcName, callback);
-	LOG("Hooked function post: \"{}\"", funcName);
-}

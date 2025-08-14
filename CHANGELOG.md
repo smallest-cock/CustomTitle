@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.1
+- Improved stability to reduce chance of crashing when joining a match
+- Fixed issues with restoring original title when plugin is unloaded
+
 ## v1.1.0
 - Added the option for an RGB effect
 

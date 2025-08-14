@@ -2,9 +2,12 @@
 #include "CustomTitle.hpp"
 #include "components/Titles.hpp"
 #include "components/Textures.hpp"
+#include "HookManager.hpp"
 
 BAKKESMOD_PLUGIN(CustomTitle, "Custom Title", plugin_version, PLUGINTYPE_FREEPLAY)
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
+
+class HookManager Hooks{};
 
 void CustomTitle::onLoad()
 {
@@ -20,13 +23,16 @@ void CustomTitle::onLoad()
 
 void CustomTitle::onUnload()
 {
-	Titles.handleUnload();
+	Hooks.unhookAllEvents();
 	Textures.setRestoreOriginalIcons(true); // restore original title icon textures (if any were changed)
+	Titles.handleUnload();
 	Dx11Data::UnhookPresent();
 }
 
 void CustomTitle::pluginInit()
 {
+	Hooks.init(gameWrapper);
+
 	initCvars();
 	initCommands();
 	initHooks();

@@ -6,6 +6,7 @@
 #include "Titles.hpp"
 #include "Items.hpp"
 #include "Instances.hpp"
+#include "HookManager.hpp"
 
 // ##############################################################################################################
 // ################################################    INIT    ##################################################
@@ -18,7 +19,7 @@ void TitlesComponent::Initialize(std::shared_ptr<GameWrapper> gw)
 	initCvars();
 	setFilePaths();
 	addPresetsFromJson();
-	hookFunctions();
+	initHooks();
 	updateGameTitleAppearances();
 	applySelectedAppearanceToUser();
 }
@@ -45,9 +46,10 @@ void TitlesComponent::setFilePaths()
 		LOG("Found '{}'", m_titlePresetsJson.filename().string());
 }
 
-void TitlesComponent::hookFunctions()
+void TitlesComponent::initHooks()
 {
-	hookWithCallerPost(Events::HUDBase_TA_DrawHUD,
+	Hooks.hookEvent(Events::HUDBase_TA_DrawHUD,
+	    HookType::Post,
 	    [this](ActorWrapper Caller, ...)
 	    {
 		    TitleAppearance* preset            = getActivePreset(false);
@@ -86,7 +88,8 @@ void TitlesComponent::hookFunctions()
 		    }
 	    });
 
-	hookWithCaller(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
+	Hooks.hookEvent(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
+	    HookType::Pre,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
 		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
@@ -102,7 +105,8 @@ void TitlesComponent::hookFunctions()
 		    LOG("Undid customization on old equipped title...");
 	    });
 
-	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
+	Hooks.hookEvent(Events::GFxData_PlayerTitles_TA_UpdateSelectedTitle,
+	    HookType::Post,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
 		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
@@ -164,7 +168,8 @@ void TitlesComponent::hookFunctions()
 	});
 	*/
 
-	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_GetTitleData,
+	Hooks.hookEvent(Events::GFxData_PlayerTitles_TA_GetTitleData,
+	    HookType::Post,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
 		    if (!m_shouldOverwriteGetTitleDataReturnVal)
@@ -241,7 +246,8 @@ void TitlesComponent::hookFunctions()
 	    });
 	*/
 
-	hookEventPost(Events::GFxData_StartMenu_TA_ProgressToMainMenu, [this](...) { applySelectedAppearanceToUser(); });
+	Hooks.hookEvent(
+	    Events::GFxData_StartMenu_TA_ProgressToMainMenu, HookType::Post, [this](std::string) { applySelectedAppearanceToUser(); });
 
 	auto refreshPriTitlePresetsUsingHud = [this](ActorWrapper Caller, void* params, std::string eventName)
 	{
@@ -251,14 +257,16 @@ void TitlesComponent::hookFunctions()
 
 		refreshPriTitlePresets(caller);
 	};
-	hookWithCallerPost(Events::GFxHUD_TA_HandleTeamChanged, refreshPriTitlePresetsUsingHud);
 
-	hookEventPost(Events::GFxData_PRI_TA_SetPlayerTitle, [this](...) { refreshPriTitlePresets(); });
+	Hooks.hookEvent(Events::GFxHUD_TA_HandleTeamChanged, HookType::Post, refreshPriTitlePresetsUsingHud);
 
-	hookEventPost(Events::EngineShare_X_EventPreLoadMap, [this](...) { m_ingamePresets.clear(); });
+	Hooks.hookEvent(Events::GFxData_PRI_TA_SetPlayerTitle, HookType::Post, [this](std::string) { refreshPriTitlePresets(); });
 
-	hookEvent(Events::PlayerController_EnterStartState,
-	    [this](...)
+	Hooks.hookEvent(Events::EngineShare_X_EventPreLoadMap, HookType::Post, [this](std::string) { m_ingamePresets.clear(); });
+
+	Hooks.hookEvent(Events::PlayerController_EnterStartState,
+	    HookType::Pre,
+	    [this](std::string)
 	    {
 		    // TODO: check cvar if custom title is enabled
 
@@ -275,7 +283,8 @@ void TitlesComponent::hookFunctions()
 		    LOG("Added user gfxPri to m_ingameCustomPresets...");
 	    });
 
-	hookWithCallerPost(Events::PlayerController_EnterStartState,
+	Hooks.hookEvent(Events::PlayerController_EnterStartState,
+	    HookType::Post,
 	    [this](ActorWrapper Caller, ...)
 	    {
 		    auto showTitleToOthers_cvar = getCvar(Cvars::showTitleToOthers);
@@ -314,32 +323,32 @@ void TitlesComponent::tickRGB() { GRainbowColor::TickRGB(*m_rgbSpeed, DEFAULT_RG
 
 void TitlesComponent::handleUnload()
 {
-	if (m_selectedTitleId.empty())
-		return;
+	// in-game
+	auto* hud = getGFxHUD();
+	if (hud)
+	{
+		for (auto* pri : hud->PRIData)
+		{
+			if (!validUObject(pri))
+				continue;
+
+			pri->HandleTitleChanged(pri->PRI); // resets to default title
+			LOG("(unload) Restored OG in-game appearance for PRI: {}", pri->PlayerName.ToString());
+		}
+	}
 
 	// restore equipped title's OG appearance...
 	// banner
-	applyPresetToBanner(m_currentOgAppearance);
 	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
 	if (pt)
 	{
-		pt->UpdatePlayerTitles();
+		pt->UpdatePlayerTitles(); // triggers the UpdateSelectedTitle hooks
 		LOG("(unload) Restored OG banner appearance");
 	}
 
-	// in-game
-	auto* hud = getGFxHUD();
-	if (!hud)
+	if (m_selectedTitleId.empty())
 		return;
-
-	for (auto* pri : hud->PRIData)
-	{
-		if (!validUObject(pri))
-			continue;
-
-		pri->HandleTitleChanged(pri->PRI); // resets to default title
-		LOG("(unload) Restored OG in-game appearance for PRI: {}", pri->PlayerName.ToString());
-	}
+	applyPresetToBanner(m_currentOgAppearance);
 }
 
 void TitlesComponent::updateGameTitleAppearances(UTitleConfig_X* config, bool forceSearch)
@@ -460,8 +469,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 #ifdef DONT_APPLY_TO_USER
 	FUniqueNetId& senderId = msg.PRI->UniqueId;
 	FUniqueNetId  userId   = Instances.GetUniqueID();
-	if (senderId.EpicAccountId == userId.EpicAccountId &&
-	    senderId.Uid == userId.Uid) // skip applying title appearance if chat was from user
+	if (sameId(senderId, userId)) // skip applying title appearance if chat was from user
 		return;
 #endif
 

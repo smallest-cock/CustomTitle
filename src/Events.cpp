@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "CustomTitle.hpp"
 #include "Events.hpp"
+#include "HookManager.hpp"
 #include "components/Titles.hpp"
 
 void CustomTitle::initHooks()
 {
-	hookWithCallerPost(Events::HUDBase_TA_OnChatMessage,
+	Hooks.hookEvent(Events::HUDBase_TA_OnChatMessage,
+	    HookType::Post,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
 		    auto params = reinterpret_cast<AHUDBase_TA_execOnChatMessage_Params*>(Params);

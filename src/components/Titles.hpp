@@ -101,7 +101,7 @@ public:
 	void                         Initialize(std::shared_ptr<GameWrapper> gw);
 
 private:
-	void hookFunctions();
+	void initHooks();
 	void setFilePaths();
 	void initCvars();
 

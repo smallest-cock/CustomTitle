@@ -4,6 +4,9 @@
 
 static constexpr int32_t INSTANCES_INTERATE_OFFSET = 10;
 
+template <typename T>
+concept UObjectOrDerived = std::is_base_of_v<UObject, T>;
+
 class InstancesComponent
 {
 public:
@@ -32,40 +35,31 @@ private:
 
 public:
 	// Get the default constructor of a class type. Example: UGameData_TA* gameData = GetDefaultInstanceOf<UGameData_TA>();
-	template <typename T> T* GetDefaultInstanceOf()
+	template <UObjectOrDerived T> T* GetDefaultInstanceOf()
 	{
-		if (std::is_base_of<UObject, T>::value)
+		for (int32_t i = 0; i < (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); ++i)
 		{
-			for (int32_t i = 0; i < (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i++)
-			{
-				UObject* uObject = UObject::GObjObjects()->at(i);
+			UObject* uObject = UObject::GObjObjects()->at(i);
+			if (!validUObject(uObject) || !uObject->IsA<T>())
+				continue;
 
-				if (uObject && uObject->IsA<T>())
-				{
-					if (uObject->GetFullName().find("Default__") != std::string::npos)
-					{
-						return static_cast<T*>(uObject);
-					}
-				}
-			}
+			if (uObject->ObjectFlags & RF_ClassDefaultObject)
+				return static_cast<T*>(uObject);
 		}
 
 		return nullptr;
 	}
 
 	// Get the most current/active instance of a class. Example: UEngine* engine = GetInstanceOf<UEngine>();
-	template <typename T> T* GetInstanceOf()
+	template <UObjectOrDerived T> T* GetInstanceOf(bool omitDefaultsAndArchetypes = true)
 	{
-		if (!std::is_base_of<UObject, T>::value)
-			return nullptr;
-
 		for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; --i)
 		{
 			UObject* uObject = UObject::GObjObjects()->at(i);
-			if (!uObject || !uObject->IsA<T>())
+			if (!validUObject(uObject) || !uObject->IsA<T>())
 				continue;
 
-			if (uObject->ObjectFlags & RF_DefaultOrArchetypeFlags)
+			if (omitDefaultsAndArchetypes && uObject->ObjectFlags & RF_DefaultOrArchetypeFlags)
 				continue;
 
 			return static_cast<T*>(uObject);
@@ -74,54 +68,61 @@ public:
 		return nullptr;
 	}
 
-	// Get the most current/active instance of a class, if one isn't found it creates a new instance. Example: UEngine* engine =
-	// GetInstanceOf<UEngine>();
-	template <typename T> T* GetOrCreateInstance()
-	{
-		if (std::is_base_of<UObject, T>::value)
-		{
-			for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; i--)
-			{
-				UObject* uObject = UObject::GObjObjects()->at(i);
-
-				if (uObject && uObject->IsA<T>())
-				{
-					// if (uObject->GetFullName().find("Default__") == std::string::npos)
-					if (CheckNotInName(uObject, "Default") && CheckNotInName(uObject, "Archetype") &&
-					    CheckNotInName(uObject, "PostGameLobby") && CheckNotInName(uObject, "Test"))
-					{
-						return static_cast<T*>(uObject);
-					}
-				}
-			}
-
-			return CreateInstance<T>();
-		}
-
-		return nullptr;
-	}
-
 	// Get all active instances of a class type. Example: std::vector<APawn*> pawns = GetAllInstancesOf<APawn>();
-	template <typename T> std::vector<T*> GetAllInstancesOf()
+	template <UObjectOrDerived T> std::vector<T*> GetAllInstancesOf(bool omitDefaultsAndArchetypes = true)
 	{
 		std::vector<T*> objectInstances;
-
-		if (!std::is_base_of<UObject, T>::value)
-			return objectInstances;
 
 		for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; --i)
 		{
 			UObject* uObject = UObject::GObjObjects()->at(i);
-			if (!uObject || !uObject->IsA<T>())
+			if (!validUObject(uObject) || !uObject->IsA<T>())
 				continue;
 
-			if (uObject->ObjectFlags & RF_DefaultOrArchetypeFlags)
+			if (omitDefaultsAndArchetypes && uObject->ObjectFlags & RF_DefaultOrArchetypeFlags)
 				continue;
 
 			objectInstances.push_back(static_cast<T*>(uObject));
 		}
 
-		LOG("Number of {}* found: {}", GetTypeName<T>(), objectInstances.size());
+		return objectInstances;
+	}
+
+	// Get the most current/active instance of a class, if one isn't found it creates a new instance. Example: UEngine* engine =
+	// GetInstanceOf<UEngine>();
+	template <UObjectOrDerived T> T* GetOrCreateInstance()
+	{
+		for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; --i)
+		{
+			UObject* uObject = UObject::GObjObjects()->at(i);
+			if (!validUObject(uObject) || !uObject->IsA<T>())
+				continue;
+
+			if (uObject->ObjectFlags & RF_DefaultOrArchetypeFlags)
+				continue;
+
+			return static_cast<T*>(uObject);
+		}
+
+		return CreateInstance<T>();
+	}
+
+	// Get all active instances of a class type. Example: std::vector<APawn*> pawns = GetAllInstancesOf<APawn>();
+	template <UObjectOrDerived T> std::vector<T*> GetAllArchetypeInstancesOf()
+	{
+		std::vector<T*> objectInstances;
+
+		for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; --i)
+		{
+			UObject* uObject = UObject::GObjObjects()->at(i);
+			if (!validUObject(uObject) || !uObject->IsA<T>())
+				continue;
+
+			if (!(uObject->ObjectFlags & RF_ArchetypeObject))
+				continue;
+
+			objectInstances.push_back(static_cast<T*>(uObject));
+		}
 
 		return objectInstances;
 	}

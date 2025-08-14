@@ -30,11 +30,6 @@ private:
 	void        registerCommand(const CvarData& cvar, const std::function<void(std::vector<std::string>)>& callback);
 	CVarWrapper getCvar(const CvarData& cvar);
 
-	void hookEvent(const char* funcName, std::function<void(std::string)> callback);
-	void hookEventPost(const char* funcName, std::function<void(std::string)> callback);
-	void hookWithCaller(const char* funcName, std::function<void(ActorWrapper, void*, std::string)> callback);
-	void hookWithCallerPost(const char* funcName, std::function<void(ActorWrapper, void*, std::string)> callback);
-
 	void runCommand(const CvarData& command, float delaySeconds = 0.0f);
 	void autoRunCommand(const CvarData& autoRunBool, const CvarData& command, float delaySeconds = 0.0f);
 	void runCommandInterval(const CvarData& command, int numIntervals, float delaySeconds, bool delayFirstCommand = false);
