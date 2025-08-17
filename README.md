@@ -8,7 +8,8 @@ Enables client-side title customization (and more) in Rocket League
 <!-- <img src="./assets/images/screenshots/in_game_ss.png" width="70%"/> -->
 
 ## ✨ Features
-- Edit text, text color & glow color
+- Edit title text, text color & glow color
+  - Can also apply an RGB effect
 - Edit tournament rank icons using custom images
 - Create title presets to save your designs
 - Apply the appearance of any existing RL title
