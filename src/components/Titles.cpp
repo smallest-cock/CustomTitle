@@ -467,10 +467,18 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 	LOG("Recieved chat data string: \"{}\"", Format::EscapeBraces(data));
 
 #ifdef DONT_APPLY_TO_USER
+	if (!validUObject(msg.PRI))
+	{
+		LOGERROR("msg.PRI from title sync chat is invalid");
+		return;
+	}
 	FUniqueNetId& senderId = msg.PRI->UniqueId;
 	FUniqueNetId  userId   = Instances.GetUniqueID();
 	if (sameId(senderId, userId)) // skip applying title appearance if chat was from user
+	{
+		LOG("Title sync chat from {} is user. Skipped applying title appearance...", msg.PRI->PlayerName.ToString());
 		return;
+	}
 #endif
 
 	auto* gfxPri = getGFxPriFromChatData(msg.PRI, hud);
