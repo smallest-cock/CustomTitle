@@ -12,7 +12,7 @@ void CustomTitle::RenderSettings()
 
 	if (ImGui::BeginChild("MainSettingsSection", ImVec2(0, content_height)))
 	{
-		GUI::alt_settings_header(h_label.c_str(), pretty_plugin_version);
+		GUI::alt_settings_header(h_label.c_str(), pretty_plugin_version, gameWrapper);
 
 		GUI::Spacing(4);
 
