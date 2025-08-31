@@ -92,19 +92,23 @@ void CustomTitle::Settings_Tab()
 	if (!showTitleToOthers_cvar)
 		return;
 
+	constexpr auto titleSyncTooltip =
+	    "Requires Quick Chats to be enabled in your RL chat settings\n\n(This requirement may be fixed in a future update)";
+
 	bool showTitleToOthers = showTitleToOthers_cvar.getBoolValue();
 	if (ImGui::Checkbox("Make my title visible to other players with the mod", &showTitleToOthers))
 		showTitleToOthers_cvar.setValue(showTitleToOthers);
+	GUI::ToolTip(titleSyncTooltip);
 
 	bool showOtherPlayerTitles = showOtherPlayerTitles_cvar.getBoolValue();
 	if (ImGui::Checkbox("Show the titles of other players with the mod", &showOtherPlayerTitles))
 		showOtherPlayerTitles_cvar.setValue(showOtherPlayerTitles);
+	GUI::ToolTip(titleSyncTooltip);
 
 	bool filterOtherPlayerTitles = filterOtherPlayerTitles_cvar.getBoolValue();
 	if (ImGui::Checkbox("Censor other players' custom titles", &filterOtherPlayerTitles))
 		filterOtherPlayerTitles_cvar.setValue(filterOtherPlayerTitles);
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Word filtering isn't foolproof");
+	GUI::ToolTip("Word filtering isn't foolproof");
 
 	bool applyOthersTitleNotif = applyOthersTitleNotif_cvar.getBoolValue();
 	if (ImGui::Checkbox("Show notification when applying other players' titles", &applyOthersTitleNotif))
@@ -173,6 +177,12 @@ void CustomTitle::Info_Tab()
 	ImGui::TextColored(GUI::Colors::Yellow, "Important plugin info:");
 
 	GUI::Spacing(4);
+
+	ImGui::TextColored(GUI::Colors::LightGreen,
+	    "Sharing your title and viewing other players' titles requires Quick Chats to be enabled in your RL chat settings");
+	ImGui::BulletText("This requirement may be fixed in a future update");
+
+	GUI::Spacing(2);
 
 	ImGui::TextColored(GUI::Colors::LightGreen, "This mod simply alters the appearance of your equipped title (client-side)");
 	ImGui::BulletText("It doesn't create new titles");
