@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.3
+- Updated internal SDK to match latest version of RL (v2.56) 🚀
+    - Fixes crashes when joining a match or freeplay 
+
 ## v1.1.2
 - Added an update button in settings to easily update the plugin when there's a new version available 🔃
 - Updated internal SDK to match latest version of RL (v2.55) 🚀

@@ -1,32 +1,29 @@
 #include "pch.h"
 #include "Items.hpp"
 
+ItemsComponent::ItemsComponent() {}
+ItemsComponent::~ItemsComponent() {}
 
-ItemsComponent::ItemsComponent() { }
-ItemsComponent::~ItemsComponent() { }
-
-UOnlineProduct_TA* ItemsComponent::SpawnProduct(
-	int item,
-	TArray<FOnlineProductAttribute> attributes,
-	int seriesid,
-	int tradehold,
-	bool log,
-	const std::string& spawnMessage,
-	bool animation
-)
+UOnlineProduct_TA* ItemsComponent::SpawnProduct(int item,
+    TArray<FOnlineProductAttribute>                 attributes,
+    int                                             seriesid,
+    int                                             tradehold,
+    bool                                            log,
+    const std::string&                              spawnMessage,
+    bool                                            animation)
 {
 	FOnlineProductData productData;
-	productData.ProductID =			item;
-	productData.SeriesID =			seriesid;
-	productData.InstanceID =		GeneratePIID(item);
-	productData.TradeHold =			tradehold;
-	productData.AddedTimestamp =	GetTimestampLong();
-	productData.Attributes =		attributes;
+	productData.ProductID      = item;
+	productData.SeriesID       = seriesid;
+	productData.InstanceID     = GeneratePIID(item);
+	productData.TradeHold      = tradehold;
+	productData.AddedTimestamp = GetTimestampLong();
+	productData.Attributes     = attributes;
 
 	UOnlineProduct_TA* product = UProductUtil_TA::CreateOnlineProduct(productData);
 	if (!product)
 		return nullptr;
-	
+
 	if (SpawnProductData(product->InstanceOnlineProductData(), spawnMessage, animation))
 		return product;
 
@@ -55,7 +52,6 @@ bool ItemsComponent::SpawnProductData(const FOnlineProductData& productData, con
 		hashId = INT32_MIN;
 	onlineProduct->CachedHash.Id = hashId++;
 
-
 	USaveData_TA* saveData = Instances.GetSaveData();
 	if (!saveData)
 	{
@@ -65,13 +61,13 @@ bool ItemsComponent::SpawnProductData(const FOnlineProductData& productData, con
 
 	FString messageFstr = (spawnMessage == "") ? L"" : FString::create(spawnMessage);
 
-	saveData->eventGiveOnlineProduct(onlineProduct, messageFstr);
+	saveData->eventGiveOnlineProduct(onlineProduct, messageFstr, 0.0f);
 	if (saveData->OnlineProductSet)
 	{
 		saveData->OnlineProductSet->Add(onlineProduct);
 
-		//auto ProductData = onlineProduct->InstanceOnlineProductData();
-		//Events.spawnedProducts.push_back(ProductData);	// maybe uncommment and implement later to make spawned items "persistent"
+		// auto ProductData = onlineProduct->InstanceOnlineProductData();
+		// Events.spawnedProducts.push_back(ProductData);	// maybe uncommment and implement later to make spawned items "persistent"
 	}
 
 	if (animation)
@@ -82,7 +78,7 @@ bool ItemsComponent::SpawnProductData(const FOnlineProductData& productData, con
 	}
 
 	LOG("Successfully spawned product: {}", Format::EscapeBraces(onlineProduct->ToJson().ToString()));
-	
+
 	return true;
 }
 
@@ -105,5 +101,4 @@ unsigned long long ItemsComponent::GetTimestampLong()
 	return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-
-class ItemsComponent Items {};
+class ItemsComponent Items{};
