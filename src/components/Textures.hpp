@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Component.hpp"
 #include <stb_image.h>
+#include <string_view>
 
 namespace stb
 {
@@ -36,8 +37,8 @@ public:
 	TexturesComponent() {}
 	~TexturesComponent() {}
 
-	static constexpr const char* component_name = "Textures";
-	void                         Initialize(std::shared_ptr<GameWrapper> gw);
+	static constexpr std::string_view componentName = "Textures";
+	void                              init(const std::shared_ptr<GameWrapper>& gw);
 
 private:
 	void setFilePaths();

@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.hpp"
 #include <optional>
+#include <string_view>
 
 // class TitleAppearance // i wan make class but too lazy switch to using getters/setters in TitlesComponent class
 struct TitleAppearance
@@ -97,8 +98,8 @@ public:
 	TitlesComponent() {}
 	~TitlesComponent() {}
 
-	static constexpr const char* component_name = "Titles";
-	void                         Initialize(std::shared_ptr<GameWrapper> gw);
+	static constexpr std::string_view componentName = "Titles";
+	void                              init(const std::shared_ptr<GameWrapper>& gw);
 
 private:
 	void initHooks();
@@ -112,6 +113,7 @@ private:
 	fs::path m_titlePresetsJson;
 
 	// cvar values
+	std::shared_ptr<bool> m_enabled                       = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_showOtherPlayerTitles         = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_showTitleToOthers             = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_filterOtherPlayerTitles       = std::make_shared<bool>(false);
@@ -120,7 +122,6 @@ private:
 	std::shared_ptr<bool> m_showEquippedTitleDetails      = std::make_shared<bool>(false);
 	std::shared_ptr<int>  m_rgbSpeed                      = std::make_shared<int>(0);
 
-	bool                             m_enabled           = false;
 	int                              m_activePresetIndex = 0;
 	TitleAppearance                  m_currentOgAppearance;
 	std::vector<TitleAppearance>     m_titlePresets;
@@ -137,6 +138,8 @@ private:
 	void            writePresetsToJson(bool notification = true) const;
 	void            addPresetsFromJson();
 	inline fs::path getPluginFolder() const { return m_pluginFolder; }
+
+	void removeUserCustomTitle();
 
 	void refreshPriTitlePresets(AGFxHUD_TA* hud = nullptr);
 	void updateGameTitleAppearances(UTitleConfig_X* config = nullptr, bool forceSearch = false);
@@ -167,7 +170,7 @@ public:
 	TitleAppearance* getActivePreset(bool log = true);
 
 	void spawnSelectedPreset(bool log = false);
-	void applySelectedAppearanceToUser();
+	void applySelectedAppearanceToUser(bool sendTitleSyncChat = false);
 	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller);
 
 	// testing
@@ -179,6 +182,7 @@ public:
 	void display_titlePresetList();
 	void display_titlePresetInfo();
 	void display_gameTitlesDropdown();
+	void display_enabledCheckbox();
 };
 
 extern class TitlesComponent Titles;

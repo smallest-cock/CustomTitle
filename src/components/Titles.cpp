@@ -6,13 +6,15 @@
 #include "Titles.hpp"
 #include "Items.hpp"
 #include "Instances.hpp"
+#include "Macros.hpp"
+#include "Events.hpp"
 #include "HookManager.hpp"
 
 // ##############################################################################################################
 // ################################################    INIT    ##################################################
 // ##############################################################################################################
 
-void TitlesComponent::Initialize(std::shared_ptr<GameWrapper> gw)
+void TitlesComponent::init(const std::shared_ptr<GameWrapper>& gw)
 {
 	gameWrapper = gw;
 
@@ -62,7 +64,7 @@ void TitlesComponent::initHooks()
 		    tickRGB();
 
 		    // update RGB preset on banner
-		    if (bannerHasRGB)
+		    if (*m_enabled && bannerHasRGB)
 		    {
 			    auto* caller = reinterpret_cast<AHUDBase_TA*>(Caller.memory_address);
 			    if (!validUObject(caller))
@@ -73,11 +75,15 @@ void TitlesComponent::initHooks()
 		    // update RGB presets in-game
 		    if (gameHasRGBPresets)
 		    {
+			    auto    userId   = Instances.GetUniqueID();
 			    int32_t rgbColor = GRainbowColor::GetDecimal();
 			    m_ingamePresets.forEachRGBPreset(
-			        [this, rgbColor](UGFxData_PRI_TA* pri, const TitleAppearance& preset)
+			        [this, rgbColor, userId](UGFxData_PRI_TA* pri, const TitleAppearance& preset)
 			        {
 				        if (!validUObject(pri))
+					        return;
+
+				        if (!*m_enabled && sameId(pri->PlayerID, userId))
 					        return;
 
 				        GfxWrapper gfxPri{pri};
@@ -92,6 +98,9 @@ void TitlesComponent::initHooks()
 	    HookType::Pre,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
+		    if (!*m_enabled)
+			    return;
+
 		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
 		    if (!caller)
 			    return;
@@ -142,6 +151,9 @@ void TitlesComponent::initHooks()
 			    m_currentOgAppearance = noneAppearance;
 		    }
 
+		    if (!*m_enabled)
+			    return;
+
 		    // here we only apply the active preset to banner, bc pretty sure UpdateSelectedTitle wont be called anywhere except main menu
 		    TitleAppearance* title = getActivePreset();
 		    if (!title)
@@ -172,7 +184,7 @@ void TitlesComponent::initHooks()
 	    HookType::Post,
 	    [this](ActorWrapper Caller, void* Params, ...)
 	    {
-		    if (!m_shouldOverwriteGetTitleDataReturnVal)
+		    if (!*m_enabled || !m_shouldOverwriteGetTitleDataReturnVal)
 			    return;
 
 		    auto* caller = reinterpret_cast<UGFxData_PlayerTitles_TA*>(Caller.memory_address);
@@ -246,8 +258,14 @@ void TitlesComponent::initHooks()
 	    });
 	*/
 
-	Hooks.hookEvent(
-	    Events::GFxData_StartMenu_TA_ProgressToMainMenu, HookType::Post, [this](std::string) { applySelectedAppearanceToUser(); });
+	Hooks.hookEvent(Events::GFxData_StartMenu_TA_ProgressToMainMenu,
+	    HookType::Post,
+	    [this](std::string)
+	    {
+		    if (!*m_enabled)
+			    return;
+		    applySelectedAppearanceToUser();
+	    });
 
 	auto refreshPriTitlePresetsUsingHud = [this](ActorWrapper Caller, void* params, std::string eventName)
 	{
@@ -268,7 +286,8 @@ void TitlesComponent::initHooks()
 	    HookType::Pre,
 	    [this](std::string)
 	    {
-		    // TODO: check cvar if custom title is enabled
+		    if (!*m_enabled)
+			    return;
 
 		    auto* userPri = getUserGFxPRI();
 		    if (!userPri)
@@ -287,6 +306,9 @@ void TitlesComponent::initHooks()
 	    HookType::Post,
 	    [this](ActorWrapper Caller, ...)
 	    {
+		    if (!*m_enabled)
+			    return;
+
 		    auto showTitleToOthers_cvar = getCvar(Cvars::showTitleToOthers);
 		    if (!showTitleToOthers_cvar || !showTitleToOthers_cvar.getBoolValue())
 			    return;
@@ -305,6 +327,20 @@ void TitlesComponent::initHooks()
 
 void TitlesComponent::initCvars()
 {
+	auto enabled_cvar = registerCvar_bool(Cvars::enabled, true);
+	enabled_cvar.bindTo(m_enabled);
+	enabled_cvar.addOnValueChanged(
+	    [this](std::string oldVal, CVarWrapper updatedCvar)
+	    {
+		    bool enabled = updatedCvar.getBoolValue();
+		    if (enabled)
+			    GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(true); });
+		    else
+			    GAME_THREAD_EXECUTE({ removeUserCustomTitle(); });
+
+		    LOG("Custom title {}", enabled ? "ENABLED" : "DISABLED");
+	    });
+
 	registerCvar_bool(Cvars::showOtherPlayerTitles, true).bindTo(m_showOtherPlayerTitles);
 	registerCvar_bool(Cvars::showTitleToOthers, true).bindTo(m_showTitleToOthers);
 	registerCvar_bool(Cvars::filterOtherPlayerTitles, false).bindTo(m_filterOtherPlayerTitles);
@@ -313,11 +349,53 @@ void TitlesComponent::initCvars()
 	registerCvar_bool(Cvars::showEquippedTitleDetails, false).bindTo(m_showEquippedTitleDetails);
 
 	registerCvar_number(Cvars::rgbSpeed, 0, true, -14, 9).bindTo(m_rgbSpeed);
+
+	// commands
+	registerCommand(Commands::toggleEnabled,
+	    [this](...)
+	    {
+		    auto enabled_cvar = getCvar(Cvars::enabled);
+		    if (!enabled_cvar)
+			    return;
+		    enabled_cvar.setValue(!enabled_cvar.getBoolValue());
+	    });
 }
 
 // ##############################################################################################################
 // ###############################################    FUNCTIONS    ##############################################
 // ##############################################################################################################
+
+// remove user's custom title (while keeping other players' custom titles in tact)
+void TitlesComponent::removeUserCustomTitle()
+{
+	FUniqueNetId userId = Instances.GetUniqueID();
+
+	// in-game
+	auto* hud = getGFxHUD();
+	if (hud)
+	{
+		for (auto* pri : hud->PRIData)
+		{
+			if (!validUObject(pri) || !sameId(pri->PlayerID, userId))
+				continue;
+
+			pri->HandleTitleChanged(pri->PRI); // resets to default title
+			LOG("Restored original in-game title appearance for user PRI: {}", pri->PlayerName.ToString());
+		}
+	}
+
+	// banner
+	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+	if (pt)
+	{
+		pt->UpdatePlayerTitles(); // triggers the UpdateSelectedTitle hooks
+		LOG("Restored OG banner appearance");
+	}
+
+	if (m_selectedTitleId.empty())
+		return;
+	applyPresetToBanner(m_currentOgAppearance);
+}
 
 void TitlesComponent::tickRGB() { GRainbowColor::TickRGB(*m_rgbSpeed, DEFAULT_RGB_SPEED); }
 
@@ -404,6 +482,10 @@ void TitlesComponent::refreshPriTitlePresets(AGFxHUD_TA* hud)
 			if (!pri)
 				continue;
 
+			// skip applying preset to user PRI if custom title is disabled
+			if (!*m_enabled && pri->PRI == hud->OwnerPRI)
+				continue;
+
 			auto it = m_ingamePresets.find(pri);
 			if (it == m_ingamePresets.end())
 				continue;
@@ -434,7 +516,7 @@ TitleAppearance* TitlesComponent::getActivePreset(bool log)
 	return &m_titlePresets[m_activePresetIndex];
 }
 
-void TitlesComponent::applySelectedAppearanceToUser()
+void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat)
 {
 	TitleAppearance* title = getActivePreset();
 	if (!title)
@@ -451,6 +533,10 @@ void TitlesComponent::applySelectedAppearanceToUser()
 	m_ingamePresets.addPreset(pri, *title);
 	if (!title->useRGB())
 		applyPresetToPri(pri, *title);
+
+	// send title sync chat
+	if (sendTitleSyncChat)
+		sendTitleDataChat(*title);
 }
 
 void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller)
@@ -1243,6 +1329,16 @@ void TitlesComponent::display_gameTitlesDropdown()
 
 		ImGui::EndCombo();
 	}
+}
+
+// checkbox that sets the value of a bool cvar, which should call the bound callback function, which should
+// apply/remove custom title
+void TitlesComponent::display_enabledCheckbox()
+{
+	auto enabled_cvar = getCvar(Cvars::enabled);
+	bool enabled      = enabled_cvar.getBoolValue();
+	if (ImGui::Checkbox("Enable", &enabled))
+		enabled_cvar.setValue(enabled);
 }
 
 // ##############################################################################################################

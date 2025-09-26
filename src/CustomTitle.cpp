@@ -45,8 +45,8 @@ void CustomTitle::pluginInit()
 
 	m_pluginFolder = gameWrapper->GetDataFolder() / stringify_(CustomTitle);
 
-	Titles.Initialize(gameWrapper);
-	Textures.Initialize(gameWrapper);
+	Titles.init(gameWrapper);
+	Textures.init(gameWrapper);
 
 	UFunction::FindFunction("dummy to trigger function cache");
 }

@@ -9,11 +9,13 @@
 void CustomTitle::RenderSettings()
 {
 	const float content_height = ImGui::GetContentRegionAvail().y - footer_height; // available height after accounting for footer
-
-	if (ImGui::BeginChild("MainSettingsSection", ImVec2(0, content_height)))
 	{
+		GUI::ScopedChild c{"MainSettingsSection", ImVec2(0, content_height)};
+
 		GUI::alt_settings_header(h_label.c_str(), pretty_plugin_version, gameWrapper);
 
+		GUI::Spacing(4);
+		Titles.display_enabledCheckbox();
 		GUI::Spacing(4);
 
 		// open bindings window button
@@ -36,14 +38,29 @@ void CustomTitle::RenderSettings()
 
 		GUI::Spacing(8);
 
+		ImGui::TextColored(GUI::Colors::LightGreen, "Bindable commands:");
+		GUI::ToolTip("Bind these commands to a key in the bakkesmod Bindings tab");
+
+		GUI::Spacing(4);
+
+		ImGui::SetNextItemWidth(200.0f);
 		std::string spawnTitleCommand = Commands::spawnCustomTitle.name;
-		ImGui::Text("Bind this command to spawn your custom title with a keypress:  ");
-		ImGui::SameLine();
-		ImGui::PushItemWidth(200);
 		ImGui::InputText("##spawnCommand", &spawnTitleCommand, ImGuiInputTextFlags_ReadOnly);
-		ImGui::PopItemWidth();
+		GUI::ToolTip("Spawn your custom title");
+		GUI::SameLineSpacing_relative(20.0f);
+		if (ImGui::Button("Copy##spawnCmd"))
+			ImGui::SetClipboardText(spawnTitleCommand.c_str());
+
+		GUI::Spacing(2);
+
+		ImGui::SetNextItemWidth(200.0f);
+		std::string toggleEnabledCommand = Commands::toggleEnabled.name;
+		ImGui::InputText("##toggleEnabledCommand", &toggleEnabledCommand, ImGuiInputTextFlags_ReadOnly);
+		GUI::ToolTip("Toggle your custom title on/off");
+		GUI::SameLineSpacing_relative(20.0f);
+		if (ImGui::Button("Copy##toggleEnabledCmd"))
+			ImGui::SetClipboardText(toggleEnabledCommand.c_str());
 	}
-	ImGui::EndChild();
 
 	GUI::alt_settings_footer("Need help? Join the Discord", "https://discord.gg/d5ahhQmJbJ");
 }

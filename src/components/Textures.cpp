@@ -46,7 +46,7 @@ json IconCustomizationState::toJson() const
 // ################################################    INIT    ##################################################
 // ##############################################################################################################
 
-void TexturesComponent::Initialize(std::shared_ptr<GameWrapper> gw)
+void TexturesComponent::init(const std::shared_ptr<GameWrapper>& gw)
 {
 	gameWrapper = gw;
 

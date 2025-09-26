@@ -89,5 +89,11 @@ protected:
 		return _globalCvarManager->registerCvar(cvar.name, startingValue, cvar.description);
 	}
 
+	// commands
+	void registerCommand(const CvarData& cvar, std::function<void(std::vector<std::string>)> callback)
+	{
+		_globalCvarManager->registerNotifier(cvar.name, std::move(callback), cvar.description, PERMISSION_ALL);
+	}
+
 	// void hook_functions();
 };

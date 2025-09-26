@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.4
+- Added ability to toggle custom title
+
 ## v1.1.3
 - Updated internal SDK to match latest version of RL (v2.56) 🚀
     - Fixes crashes when joining a match or freeplay 

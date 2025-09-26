@@ -27,6 +27,7 @@ You can use the following commands in the BakkesMod console (`F6`) or bind them 
 | Command | Description | Best Used With |
 |---------|-------------|:--------------:|
 | `customtitle_spawn_custom_title` | Spawn current title preset | Key bind |
+| `customtitle_toggle_enabled` | Toggle custom title on/off | Key bind |
 | `customtitle_spawn_item <id>` | Spawn item based on its product ID | Console |
 
 <br>
