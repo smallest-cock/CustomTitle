@@ -427,7 +427,7 @@ TitleAppearance* TitlesComponent::getActivePreset(bool log)
 	if (m_activePresetIndex >= m_titlePresets.size())
 	{
 		if (log)
-			LOG("ERROR: Active preset index is out of range: {}", m_activePresetIndex);
+			LOGERROR("Active preset index is out of range: {}", m_activePresetIndex);
 		return nullptr;
 	}
 
@@ -488,7 +488,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 	auto appearanceOpt = TitleAppearance::fromEncodedStr(data);
 	if (!appearanceOpt)
 	{
-		LOG("ERROR: Unable to parse title appearance from string: \"{}\"", Format::EscapeBraces(data));
+		LOGERROR("Unable to parse title appearance from string: \"{}\"", Format::EscapeBraces(data));
 		return;
 	}
 	TitleAppearance appearance = *appearanceOpt;
@@ -505,7 +505,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 		{
 			if (code != 200)
 			{
-				LOG("ERROR: Check for update HTTP Request Failed! Response code: {}", code);
+				LOGERROR("Check for update HTTP Request Failed! Response code: {}", code);
 				return;
 			}
 
@@ -653,7 +653,7 @@ bool TitlesComponent::spawn(const FString& spawn_id, bool animation, const std::
 			LOG("Added UProductAttribute_NoNotify_TA to title attributes array");
 		}
 		else
-			LOG("ERROR: UProductAttribute_NoNotify_TA instance is null");
+			LOGERROR("UProductAttribute_NoNotify_TA instance is null");
 	}
 
 	if (Items.SpawnProduct(3036, attributes, 0, 0, false, spawn_msg, animation))
@@ -778,20 +778,20 @@ AGFxHUD_TA* TitlesComponent::getGFxHUD()
 	auto* lp = Instances.IULocalPlayer();
 	if (!validUObject(lp))
 	{
-		LOG("ERROR: Instances.IULocalPlayer() is null");
+		LOGERROR("Instances.IULocalPlayer() is null");
 		return nullptr;
 	}
 
 	auto* pc = lp->Actor;
 	if (!validUObject(pc))
 	{
-		LOG("ERROR: lp->Actor is null");
+		LOGERROR("lp->Actor is null");
 		return nullptr;
 	}
 
 	if (!validUObject(pc->myHUD) || !pc->myHUD->IsA<AGFxHUD_TA>())
 	{
-		// LOG("ERROR: pc->myHUD is null or invalid"); // <--- gets called on every title text/color change while in main menu... cluttering
+		// LOGERROR("pc->myHUD is null or invalid"); // <--- gets called on every title text/color change while in main menu... cluttering
 		// console :(
 		return nullptr;
 	}
@@ -807,7 +807,7 @@ UGFxData_PRI_TA* TitlesComponent::getUserGFxPRI()
 
 	if (!validUObject(gfxHud->OwnerPRI))
 	{
-		LOG("ERROR: gfxHud->OwnerPRI is null or invalid");
+		LOGERROR("gfxHud->OwnerPRI is null or invalid");
 		return nullptr;
 	}
 
@@ -826,7 +826,7 @@ UGFxData_PRI_TA* TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo* 
 {
 	if (!validUObject(priBase))
 	{
-		LOG("ERROR: APlayerReplicationInfo* from chat data is invalid");
+		LOGERROR("APlayerReplicationInfo* from chat data is invalid");
 		return nullptr;
 	}
 	if (!validUObject(hudBase))
@@ -834,12 +834,12 @@ UGFxData_PRI_TA* TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo* 
 
 	if (!priBase->IsA<APRI_TA>())
 	{
-		LOG("ERROR: APlayerReplicationInfo instance isn't a APRI_TA");
+		LOGERROR("APlayerReplicationInfo instance isn't a APRI_TA");
 		return nullptr;
 	}
 	if (!hudBase->IsA<AGFxHUD_TA>())
 	{
-		LOG("ERROR: AHUDBase_TA instance isn't a AGFxHUD_TA");
+		LOGERROR("AHUDBase_TA instance isn't a AGFxHUD_TA");
 		return nullptr;
 	}
 
@@ -849,7 +849,7 @@ UGFxData_PRI_TA* TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo* 
 	auto gfxPriIndex = hud->GetPRIDataIndex(pri);
 	if (gfxPriIndex >= hud->PRIData.size())
 	{
-		LOG("ERROR: PRIData index is out of bounds");
+		LOGERROR("PRIData index is out of bounds");
 		return nullptr;
 	}
 
@@ -908,13 +908,13 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance& appearance, APlay
 		auto* lp = Instances.IULocalPlayer();
 		if (!lp)
 		{
-			LOG("ERROR: Instances.IULocalPlayer() is null");
+			LOGERROR("Instances.IULocalPlayer() is null");
 			return;
 		}
 
 		if (!lp->Actor || !lp->Actor->IsA<APlayerController_TA>())
 		{
-			LOG("ERROR: lp->Actor is null or isnt a APlayerController_TA");
+			LOGERROR("lp->Actor is null or isnt a APlayerController_TA");
 			return;
 		}
 		pc = lp->Actor;

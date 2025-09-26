@@ -10,7 +10,7 @@ void IconCustomizationState::fromJson(const json& data)
 {
 	if (!data.contains("iconName"))
 	{
-		LOG("ERROR: JSON data doesnt contain the key \"iconName\"");
+		LOGERROR("JSON data doesnt contain the key \"iconName\"");
 		return;
 	}
 
@@ -165,12 +165,12 @@ void TexturesComponent::updateCustomizationsFromJson()
 
 	if (!data.is_array())
 	{
-		LOG("ERROR: JSON data from file isn't an array");
+		LOGERROR("JSON data from file isn't an array");
 		return;
 	}
 	if (data.size() != m_iconCustomizations.size())
 	{
-		LOG("ERROR: JSON array size isn't {}", m_iconCustomizations.size());
+		LOGERROR("JSON array size isn't {}", m_iconCustomizations.size());
 		return;
 	}
 
@@ -182,7 +182,7 @@ void TexturesComponent::updateCustomizationsFromJson()
 		const auto& iconData = data[i];
 		if (!iconData.is_object())
 		{
-			LOG("ERROR: Data at index {} of JSON array isn't an object. Skipping this entry...", i);
+			LOGERROR("Data at index {} of JSON array isn't an object. Skipping this entry...", i);
 			continue;
 		}
 
@@ -215,12 +215,12 @@ UTexture* TexturesComponent::findIconUTexture(const IconCustomizationState& icon
 	UTexture* tex = Instances.FindObject<UTexture2D>(icon.textureName);
 	if (!tex)
 	{
-		LOG("ERROR: Unable to find UTexture for icon using name: \"{}\"", icon.textureName);
+		LOGERROR("Unable to find UTexture for icon using name: \"{}\"", icon.textureName);
 		return nullptr;
 	}
 	if (tex->ObjectFlags & RF_BadObjectFlags)
 	{
-		LOG("ERROR: UTexture is invalid: \"{}\"", icon.textureName);
+		LOGERROR("UTexture is invalid: \"{}\"", icon.textureName);
 		return nullptr;
 	}
 
@@ -258,14 +258,14 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const Microsof
 {
 	if (!target || target->ObjectFlags & RF_BadObjectFlags)
 	{
-		LOG("ERROR: UTexture is invalid... unable to change texture");
+		LOGERROR("UTexture is invalid... unable to change texture");
 		return;
 	}
 
 	ID3D11Texture2D* targetDxTex = getDxTexture2D(target);
 	if (!targetDxTex)
 	{
-		LOG("ERROR: Failed to get ID3D11Texture2D from UTexture");
+		LOGERROR("Failed to get ID3D11Texture2D from UTexture");
 		return;
 	}
 
@@ -302,7 +302,7 @@ bool InitializeScratchImageFromImage(const DirectX::Image& srcImage, DirectX::Sc
 
 	if (FAILED(hr))
 	{
-		LOG("ERROR: Failed to initialize DirectX::ScratchImage using Initialize2D");
+		LOGERROR("Failed to initialize DirectX::ScratchImage using Initialize2D");
 		return false;
 	}
 
@@ -321,12 +321,12 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 {
 	if (!target || target->ObjectFlags & RF_BadObjectFlags)
 	{
-		LOG("ERROR: UTexture is invalid... unable to change texture");
+		LOGERROR("UTexture is invalid... unable to change texture");
 		return;
 	}
 	if (!fs::exists(path))
 	{
-		LOG("ERROR: Image doesn't exist: \"{}\"", path.string());
+		LOGERROR("Image doesn't exist: \"{}\"", path.string());
 		return;
 	}
 
@@ -337,7 +337,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	ID3D11Texture2D* targetDxTex = getDxTexture2D(target);
 	if (!targetDxTex)
 	{
-		LOG("ERROR: Failed to get ID3D11Texture2D from UTexture");
+		LOGERROR("Failed to get ID3D11Texture2D from UTexture");
 		return;
 	}
 
@@ -382,7 +382,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 		hr = DirectX::Resize(customImageSource, originalDesc.Width, originalDesc.Height, DirectX::TEX_FILTER_DEFAULT, resizedImage);
 		if (FAILED(hr))
 		{
-			LOG("ERROR: Failed to resize image (HRESULT: {})", Format::ToHexString(hr));
+			LOGERROR("Failed to resize image (HRESULT: {})", Format::ToHexString(hr));
 			return;
 		}
 		processedImage = std::move(resizedImage);
@@ -407,7 +407,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	const DirectX::Image* processedImg = processedImage.GetImage(0, 0, 0);
 	if (!processedImg)
 	{
-		LOG("ERROR: DirectX::Image* from processedImage.GetImage(0, 0, 0) is null");
+		LOGERROR("DirectX::Image* from processedImage.GetImage(0, 0, 0) is null");
 		return;
 	}
 
@@ -415,7 +415,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	hr = DirectX::Compress(*processedImg, originalFormat, DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedImage);
 	if (FAILED(hr))
 	{
-		LOG("ERROR: Compression failed (HRESULT: {})", Format::ToHexString(hr));
+		LOGERROR("Compression failed (HRESULT: {})", Format::ToHexString(hr));
 		return;
 	}
 
@@ -467,7 +467,7 @@ void TexturesComponent::applyCustomImgToTexture(UTexture* target, const fs::path
 	hr = Dx11Data::pd3dDevice->CreateTexture2D(&newDesc, &initData, &newTexture);
 	if (FAILED(hr))
 	{
-		LOG("ERROR: Failed to create temp texture (HRESULT: {}).", Format::ToHexString(hr));
+		LOGERROR("Failed to create temp texture (HRESULT: {}).", Format::ToHexString(hr));
 		return;
 	}
 
@@ -504,7 +504,7 @@ bool TexturesComponent::createImageDataFromPath(const fs::path& imgPath, CustomI
 
 	if (!fs::exists(imgPath))
 	{
-		LOG("ERROR: Filepath doesn't exist: \"{}\"", imgPath.string());
+		LOGERROR("Filepath doesn't exist: \"{}\"", imgPath.string());
 		return false;
 	}
 
@@ -536,19 +536,19 @@ FD3D11Texture2D* TexturesComponent::getDxTextureData(UTexture* tex)
 {
 	if (!tex)
 	{
-		LOG("ERROR: UTexture* is null");
+		LOGERROR("UTexture* is null");
 		return nullptr;
 	}
 	else if (tex->ObjectFlags & RF_BadObjectFlags)
 	{
-		LOG("ERROR: UTexture has bad object flags");
+		LOGERROR("UTexture has bad object flags");
 		return nullptr;
 	}
 
 	FTextureResource* texResource = reinterpret_cast<FTextureResource*>(tex->Resource.Dummy);
 	if (!texResource)
 	{
-		LOG("ERROR: FTextureResource* from UTexture is null");
+		LOGERROR("FTextureResource* from UTexture is null");
 		return nullptr;
 	}
 
@@ -560,7 +560,7 @@ ID3D11Texture2D* TexturesComponent::getDxTexture2D(UTexture* tex)
 	FD3D11Texture2D* dxTexData = getDxTextureData(tex);
 	if (!dxTexData)
 	{
-		LOG("ERROR: FD3D11Texture2D* from UTexture is null");
+		LOGERROR("FD3D11Texture2D* from UTexture is null");
 		return nullptr;
 	}
 
@@ -572,7 +572,7 @@ ID3D11ShaderResourceView* TexturesComponent::getDxSRV(UTexture* tex)
 	FD3D11Texture2D* dxTexData = getDxTextureData(tex);
 	if (!dxTexData)
 	{
-		LOG("ERROR: FD3D11Texture2D* from UTexture is null");
+		LOGERROR("FD3D11Texture2D* from UTexture is null");
 		return nullptr;
 	}
 
