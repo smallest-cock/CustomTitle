@@ -39,7 +39,7 @@ void CustomTitle::RenderSettings()
 		GUI::Spacing(8);
 
 		ImGui::TextColored(GUI::Colors::LightGreen, "Bindable commands:");
-		GUI::ToolTip("Bind these commands to a key in the bakkesmod Bindings tab");
+		GUI::ToolTip("Bind these commands to a key in the bakkesmod Bindings tab...");
 
 		GUI::Spacing(4);
 
@@ -108,6 +108,10 @@ void CustomTitle::Settings_Tab()
 	auto rgbSpeed_cvar                 = getCvar(Cvars::rgbSpeed);
 	if (!showTitleToOthers_cvar)
 		return;
+
+	GUI::Spacing(2);
+	Titles.display_enabledCheckbox();
+	GUI::Spacing(2);
 
 	constexpr auto titleSyncTooltip =
 	    "Requires Quick Chats to be enabled in your RL chat settings\n\n(This requirement may be fixed in a future update)";

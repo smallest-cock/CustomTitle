@@ -7,8 +7,6 @@
 
 void CustomTitle::initCommands()
 {
-	registerCommand(
-	    Commands::spawnCustomTitle, [this](std::vector<std::string> args) { GAME_THREAD_EXECUTE({ Titles.spawnSelectedPreset(); }); });
 
 	registerCommand(Commands::spawnItem,
 	    [this](std::vector<std::string> args)

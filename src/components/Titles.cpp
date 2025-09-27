@@ -359,6 +359,19 @@ void TitlesComponent::initCvars()
 			    return;
 		    enabled_cvar.setValue(!enabled_cvar.getBoolValue());
 	    });
+
+	registerCommand(Commands::spawnCustomTitle,
+	    [this](...)
+	    {
+		    GAME_THREAD_EXECUTE({
+			    if (!*m_enabled)
+			    {
+				    Instances.SpawnNotification("Custom Title", "Spawning requires custom title to be enabled!", 4, true);
+				    return;
+			    }
+			    spawnSelectedPreset();
+		    });
+	    });
 }
 
 // ##############################################################################################################
@@ -1042,7 +1055,8 @@ void TitlesComponent::display_titlePresetList()
 			{
 				m_activePresetIndex = i;
 				GAME_THREAD_EXECUTE({
-					applySelectedAppearanceToUser();
+					if (*m_enabled)
+						applySelectedAppearanceToUser();
 					writePresetsToJson(false); // to save the active preset index
 				});
 			}
@@ -1235,7 +1249,7 @@ void TitlesComponent::display_titlePresetInfo()
 			});
 		}
 
-		ImGui::Text("%zu title presets", m_gameTitles.size());
+		ImGui::Text("%zu presets found", m_gameTitles.size());
 	}
 
 	GUI::Spacing(2);
@@ -1245,15 +1259,18 @@ void TitlesComponent::display_titlePresetInfo()
 
 		{
 			GUI::ScopedChild c{"SpawnButton", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.5f)};
-
-			if (ImGui::Button("Spawn", ImGui::GetContentRegionAvail()))
-				_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
-			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Press OK at the spawn prompt. Pressing EQUIP NOW can cause buggy behavior.\n\n"
-				                  "TIP - Bind this command to a key: %s",
-				    Commands::spawnCustomTitle.name);
+				GUI::ScopedDisabled disablility{m_enabled};
+
+				if (ImGui::Button("Spawn", ImGui::GetContentRegionAvail()))
+					_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
 			}
+			if (*m_enabled)
+				GUI::ToolTip("Press OK at the spawn prompt. Pressing EQUIP NOW can cause buggy behavior.\n\n"
+				             "TIP - Bind this command to a key: %s",
+				    Commands::spawnCustomTitle.name);
+			else
+				GUI::ToolTip("Spawning requires custom title to be enabled");
 		}
 
 		{
