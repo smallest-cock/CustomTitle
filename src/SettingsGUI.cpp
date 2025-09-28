@@ -16,22 +16,17 @@ void CustomTitle::RenderSettings()
 
 		GUI::Spacing(4);
 		Titles.display_enabledCheckbox();
-		GUI::Spacing(4);
-
-		// open bindings window button
-		std::string openMenuCommand = "togglemenu " + GetMenuName();
-		if (ImGui::Button("Open Menu"))
-			GAME_THREAD_EXECUTE({ cvarManager->executeCommand(openMenuCommand); }, openMenuCommand);
-
-		GUI::Spacing(4);
-
-		ImGui::Text("or bind this command:  ");
-		ImGui::SameLine();
-		ImGui::PushItemWidth(150);
-		ImGui::InputText("##openMenuCommand", &openMenuCommand, ImGuiInputTextFlags_ReadOnly);
-		ImGui::PopItemWidth();
 
 		GUI::Spacing(8);
+
+		// open bindings window button
+		if (ImGui::Button("Open Menu"))
+			GAME_THREAD_EXECUTE({
+				static const std::string openMenuCmd = "togglemenu " + GetMenuName();
+				cvarManager->executeCommand(openMenuCmd);
+			});
+
+		GUI::Spacing(4);
 
 		if (ImGui::Button(std::format("Open {} folder", stringify_(CustomTitle)).c_str()))
 			Files::OpenFolder(m_pluginFolder);
@@ -43,23 +38,23 @@ void CustomTitle::RenderSettings()
 
 		GUI::Spacing(4);
 
-		ImGui::SetNextItemWidth(200.0f);
-		std::string spawnTitleCommand = Commands::spawnCustomTitle.name;
-		ImGui::InputText("##spawnCommand", &spawnTitleCommand, ImGuiInputTextFlags_ReadOnly);
-		GUI::ToolTip("Spawn your custom title");
-		GUI::SameLineSpacing_relative(20.0f);
-		if (ImGui::Button("Copy##spawnCmd"))
-			ImGui::SetClipboardText(spawnTitleCommand.c_str());
+		static std::array<std::pair<std::string, const char*>, 3> s_bindableCmds = {{
+		    {("togglemenu " + GetMenuName()), "Toggle plugin menu"},
+		    {Commands::toggleEnabled.name, "Toggle your custom title on/off"},
+		    {Commands::spawnCustomTitle.name, "Spawn your custom title"},
+		}};
 
-		GUI::Spacing(2);
+		for (auto& [cmd, desc] : s_bindableCmds)
+		{
+			GUI::ScopedID id{&cmd};
 
-		ImGui::SetNextItemWidth(200.0f);
-		std::string toggleEnabledCommand = Commands::toggleEnabled.name;
-		ImGui::InputText("##toggleEnabledCommand", &toggleEnabledCommand, ImGuiInputTextFlags_ReadOnly);
-		GUI::ToolTip("Toggle your custom title on/off");
-		GUI::SameLineSpacing_relative(20.0f);
-		if (ImGui::Button("Copy##toggleEnabledCmd"))
-			ImGui::SetClipboardText(toggleEnabledCommand.c_str());
+			ImGui::SetNextItemWidth(200.0f);
+			ImGui::InputText("", &cmd, ImGuiInputTextFlags_ReadOnly);
+			GUI::ToolTip("%s", desc);
+			GUI::CopyButton("Copy", cmd.c_str());
+
+			GUI::Spacing(2);
+		}
 	}
 
 	GUI::alt_settings_footer("Need help? Join the Discord", "https://discord.gg/d5ahhQmJbJ");
