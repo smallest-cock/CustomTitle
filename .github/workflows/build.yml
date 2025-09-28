@@ -1,129 +1,129 @@
 name: 🧱 Build DLL & release (Windows)
 
 env:
-    PLUGIN_NAME: CustomTitle
-    TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
+  PLUGIN_NAME: CustomTitle
+  TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
 
 on:
-    push:
-        tags:
-            - "v*.*.*"
-    workflow_dispatch:
-        inputs:
-            tag:
-                description: "Release tag (e.g. v1.0.1)"
-                required: true
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.1)"
+        required: true
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-    check-changelog:
-        name: Check changelog (main)
-        runs-on: windows-latest
-        outputs:
-            changelog: ${{ steps.changelog.outputs.changelog }}
-        steps:
-            - name: 📥 Checkout repository (main)
-              uses: actions/checkout@v4
-              with:
-                  ref: main
-                  submodules: false
+  check-changelog:
+    name: Check changelog (main)
+    runs-on: windows-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: 📥 Checkout repository (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: false
 
-            - name: 📝 Extract changes from changelog
-              id: changelog
-              shell: bash
-              run: |
-                  # Prefer manual input if available
-                  TAG="${{ github.event.inputs.tag || github.ref_name }}"
+      - name: 📝 Extract changes from changelog
+        id: changelog
+        shell: bash
+        run: |
+          # Prefer manual input if available
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
 
-                  # fail if tag not found in CHANGELOG.md
-                  if ! grep -q "^## $TAG" CHANGELOG.md; then
-                    echo "❌ Tag '$TAG' not found in CHANGELOG.md"
-                    exit 1
-                  fi
+          # fail if tag not found in CHANGELOG.md
+          if ! grep -q "^## $TAG" CHANGELOG.md; then
+            echo "❌ Tag '$TAG' not found in CHANGELOG.md"
+            exit 1
+          fi
 
-                  echo "Using tag: $TAG"
+          echo "Using tag: $TAG"
 
-                  NOTES=$(awk "/^## $TAG/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md)
+          NOTES=$(awk "/^## $TAG/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md)
 
-                  echo "Extracted notes:"
-                  echo "$NOTES"
+          echo "Extracted notes:"
+          echo "$NOTES"
 
-                  {
-                    echo "changelog<<EOF"
-                    echo "$NOTES"
-                    echo "EOF"
-                  } >> "$GITHUB_OUTPUT"
+          {
+            echo "changelog<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
-    build:
-        name: Build DLL
-        needs: check-changelog
-        runs-on: windows-latest # uses pwsh (PowerShell Core) as default shell
+  build:
+    name: Build DLL
+    needs: check-changelog
+    runs-on: windows-latest # uses pwsh (PowerShell Core) as default shell
 
-        steps:
-            - name: 📥 Checkout repository (without submodules)
-              uses: actions/checkout@v4
-              with:
-                  submodules: false
+    steps:
+      - name: 📥 Checkout repository (without submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: false
 
-            - name: 🍆 Initialize submodules
-              run: ./scripts/init-submodules.bat
+      - name: 🍆 Initialize submodules
+        run: ./scripts/init-submodules.bat
 
-            - name: 🪟 Set up MSVC
-              uses: ilammy/msvc-dev-cmd@v1
+      - name: 🪟 Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-            - name: 🗄️ Cache vcpkg dependencies
-              id: cache-vcpkg
-              uses: actions/cache@v4
-              with:
-                  path: |
-                    vcpkg
-                    build\vcpkg_installed
-                  key: vcpkg-${{ hashFiles('**/vcpkg.json') }}-${{ runner.os }}
+      - name: 🗄️ Cache vcpkg dependencies
+        id: cache-vcpkg
+        uses: actions/cache@v4
+        with:
+          path: |
+            vcpkg
+            build\vcpkg_installed
+          key: vcpkg-${{ hashFiles('**/vcpkg.json') }}-${{ runner.os }}
 
-            - name: 📥 vcpkg setup (if not cached)
-              if: steps.cache-vcpkg.outputs.cache-hit != 'true'
-              run: |
-                  git clone --recurse-submodules https://github.com/microsoft/vcpkg.git "${{ github.workspace }}/vcpkg"
-                  ./vcpkg/bootstrap-vcpkg.bat
+      - name: 📥 vcpkg setup (if not cached)
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+        run: |
+          git clone --recurse-submodules https://github.com/microsoft/vcpkg.git "${{ github.workspace }}/vcpkg"
+          ./vcpkg/bootstrap-vcpkg.bat
 
-            - name: 🥷 Set up Ninja
-              uses: seanmiddleditch/gha-setup-ninja@v3
+      - name: 🥷 Set up Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v3
 
-            - name: ⚙️ Set up CMake
-              uses: jwlawson/actions-setup-cmake@v1
+      - name: ⚙️ Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
 
-            - name: 🧱 Configure using CMake preset
-              run: cmake --preset windows-x64-msvc
+      - name: 🧱 Configure using CMake preset
+        run: cmake --preset windows-x64-msvc
 
-            - name: 🔨 Build using CMake preset
-              run: cmake --build --preset default
+      - name: 🔨 Build using CMake preset
+        run: cmake --build --preset default
 
-            - name: 🥵 Prepare release files
-              shell: bash
-              run: |
-                  7z a source.zip * -xr!vcpkg_installed -xr!README.md -xr!build -xr!plugins -xr!scripts -xr!assets -xr!.git
-                  mkdir -p dist temp/debug temp/installation_zip
-                  mv ./source.zip temp/debug
-                  cp ./plugins/*.dll temp/installation_zip
-                  mv ./scripts/install.bat temp/installation_zip
-                  mv ./plugins/*.dll temp/debug
-                  mv ./plugins/*.pdb temp/debug
-                  7z a "dist/${{ env.PLUGIN_NAME }}.zip" ./temp/installation_zip/*
-                  7z a dist/debug.zip ./temp/debug/*
+      - name: 🥵 Prepare release files
+        shell: bash
+        run: |
+          7z a source.zip * -xr!vcpkg -xr!vcpkg_installed xr!ninja-build -xr!README.md -xr!build -xr!plugins -xr!scripts -xr!assets -xr!.git
+          mkdir -p dist temp/debug temp/installation_zip
+          mv ./source.zip temp/debug
+          cp ./plugins/*.dll temp/installation_zip
+          mv ./scripts/install.bat temp/installation_zip
+          mv ./plugins/*.dll temp/debug
+          mv ./plugins/*.pdb temp/debug
+          7z a "dist/${{ env.PLUGIN_NAME }}.zip" ./temp/installation_zip/*
+          7z a dist/debug.zip ./temp/debug/*
 
-            - name: 🚀 Create release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ env.TAG_NAME }}
-                  body: |
-                      ## Install Steps
-                      1. Close Rocket League
+      - name: 🚀 Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          body: |
+            ## Install Steps
+            1. Close Rocket League
 
-                      2. Click `${{ env.PLUGIN_NAME }}.zip` below to download it
+            2. Click `${{ env.PLUGIN_NAME }}.zip` below to download it
 
-                      3. Extract `${{ env.PLUGIN_NAME }}.zip` and run `install.bat`
+            3. Extract `${{ env.PLUGIN_NAME }}.zip` and run `install.bat`
 
-                      ## Notes
-                      ${{ needs.check-changelog.outputs.changelog }}
-                  files: dist/*.zip
+            ## Notes
+            ${{ needs.check-changelog.outputs.changelog }}
+          files: dist/*.zip
