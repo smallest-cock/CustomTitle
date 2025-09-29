@@ -143,13 +143,7 @@ void TitlesComponent::initHooks()
 			    }
 		    }
 		    else
-		    {
-			    TitleAppearance noneAppearance{};
-			    noneAppearance.setText("");
-			    noneAppearance.setTextColor({});
-			    noneAppearance.setGlowColor({});
-			    m_currentOgAppearance = noneAppearance;
-		    }
+			    m_currentOgAppearance.clear();
 
 		    if (!*m_enabled)
 			    return;
@@ -309,8 +303,7 @@ void TitlesComponent::initHooks()
 		    if (!*m_enabled)
 			    return;
 
-		    auto showTitleToOthers_cvar = getCvar(Cvars::showTitleToOthers);
-		    if (!showTitleToOthers_cvar || !showTitleToOthers_cvar.getBoolValue())
+		    if (!*m_showTitleToOthers)
 			    return;
 
 		    auto* caller = reinterpret_cast<APlayerController*>(Caller.memory_address);
@@ -1386,6 +1379,13 @@ bool TitlesComponent::test2() { return true; }
 // ##############################################################################################################
 // #########################################    TitleAppearance    ##############################################
 // ##############################################################################################################
+
+void TitleAppearance::clear()
+{
+	m_text.clear();
+	m_textColor = {};
+	m_glowColor = {};
+}
 
 void TitleAppearance::updateFromPlayerTitleData(const FPlayerTitleData& data)
 {

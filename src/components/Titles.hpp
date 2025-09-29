@@ -46,6 +46,7 @@ public:
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
 	void setUseRGB(bool val) { m_useRGB = val; }
 
+	void        clear();
 	std::string getDebugTextColorStr() const;
 	std::string getDebugGlowColorStr() const;
 	std::string toEncodedString() const;
