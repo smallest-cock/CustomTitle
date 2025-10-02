@@ -28,6 +28,7 @@
                 "CMAKE_LINKER": "link",
                 "CMAKE_RC_COMPILER": "rc",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed",
                 "VCPKG_TARGET_TRIPLET": "x64-windows-static"
             },
             "condition": {

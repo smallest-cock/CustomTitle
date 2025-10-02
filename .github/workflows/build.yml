@@ -78,7 +78,7 @@ jobs:
         with:
           path: |
             vcpkg
-            build\vcpkg_installed
+            vcpkg_installed
           key: vcpkg-${{ hashFiles('**/vcpkg.json') }}-${{ runner.os }}
 
       - name: 📥 vcpkg setup (if not cached)
