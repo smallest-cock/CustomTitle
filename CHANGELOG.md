@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.5
+- Minor UI improvements
+- Updated internal SDK to match latest version of RL (v2.58)
+
 ## v1.1.4
 - Added ability to toggle custom title on/off
 
