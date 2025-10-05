@@ -71,7 +71,7 @@ This project uses [DirectXTex](https://github.com/microsoft/DirectXTex) and [Min
 
 ➡️ Now when you build the project for the first time, vcpkg will build/install the dependencies listed in `./vcpkg.json`.
 
-More info: [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/consume/manifest-mode?tabs=msbuild%2Cbuild-MSBuild#2---integrate-vcpkg-with-your-build-system)
+More info: [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/consume/manifest-mode?tabs=cmake%2Cbuild-MSBuild#2---integrate-vcpkg-with-your-build-system)
 
 ### 3. Build with CMake
 1. Install [CMake](https://cmake.org/download) and [Ninja](https://github.com/ninja-build/ninja/releases) (or another build system if you're not using Ninja)
