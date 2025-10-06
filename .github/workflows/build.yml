@@ -123,7 +123,10 @@ jobs:
             2. Click `${{ env.PLUGIN_NAME }}.zip` below to download it
 
             3. Extract `${{ env.PLUGIN_NAME }}.zip` and run `install.bat`
-
+              - If you get an error when running `install.bat`, you can manually drag/drop `CustomTitle.dll` into your bakkesmod plugins folder located here:
+                ```
+                %appdata%\bakkesmod\bakkesmod\plugins
+                ```
             ## Notes
             ${{ needs.check-changelog.outputs.changelog }}
           files: dist/*.zip
