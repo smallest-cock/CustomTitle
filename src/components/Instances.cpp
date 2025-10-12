@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <libloaderapi.h>
 #include "Instances.hpp"
 
 InstancesComponent::InstancesComponent() { OnCreate(); }
@@ -30,6 +31,8 @@ void InstancesComponent::OnDestroy()
 }
 
 // ========================================= init RLSDK globals ===========================================
+
+constexpr auto MODULE_NAME = L"RocketLeague.exe";
 
 uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* pattern, const char* mask)
 {
@@ -66,18 +69,46 @@ uintptr_t InstancesComponent::GetGNamesAddress()
 	unsigned char GNamesPattern[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x35\x25\x02\x00";
 	char          GNamesMask[]    = "??????xx??xxxxxx";
 
-	auto GNamesAddress = FindPattern(GetModuleHandle(L"RocketLeague.exe"), GNamesPattern, GNamesMask);
+	auto GNamesAddress = FindPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
 
 	return GNamesAddress;
 }
 
 uintptr_t InstancesComponent::GetGObjectsAddress() { return GetGNamesAddress() + 0x48; }
 
+uintptr_t InstancesComponent::getGMallocAddr()
+{
+	constexpr uint8_t pattern[] = "\x48\x89\x0D\x00\x00\x00\x00\x48\x8B\x01\xFF\x50\x60";
+	constexpr auto    mask      = "xxx????xxxxxx";
+
+	uintptr_t foundAddr = FindPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
+	if (!foundAddr)
+	{
+		LOGERROR("We are returning NULL for GMalloc address...");
+		return NULL;
+	}
+
+	// Extract the 32-bit displacement offset from the instruction
+	int32_t displacement = *reinterpret_cast<int32_t*>(foundAddr + 3);
+
+	// Calculate address using RIP-relative formula
+	uintptr_t gMallocAddr = foundAddr + 7 + displacement;
+	return gMallocAddr;
+}
+
 bool InstancesComponent::InitGlobals()
 {
 	uintptr_t gnamesAddr = GetGNamesAddress();
 	GNames               = reinterpret_cast<TArray<FNameEntry*>*>(gnamesAddr);
 	GObjects             = reinterpret_cast<TArray<UObject*>*>(gnamesAddr + 0x48);
+
+	uintptr_t gmallocAddr = getGMallocAddr();
+	if (!gmallocAddr)
+	{
+		LOGERROR("Failed to find GMalloc address via pattern scan");
+		return false;
+	}
+	GMalloc = gmallocAddr;
 
 	return CheckGlobals();
 }

@@ -21,6 +21,7 @@ public:
 	uintptr_t FindPattern(HMODULE module, const unsigned char* pattern, const char* mask);
 	uintptr_t GetGNamesAddress();
 	uintptr_t GetGObjectsAddress();
+	uintptr_t getGMallocAddr();
 	bool      InitGlobals();
 	bool      AreGObjectsValid();
 	bool      AreGNamesValid();
