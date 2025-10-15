@@ -55,33 +55,6 @@ void CustomTitle::RenderSettings()
 
 			GUI::Spacing(2);
 		}
-
-		/*
-		GUI::Spacing(4);
-		if (void* instance = GMalloc.getFMallocInstance())
-		{
-		    std::string gmallocValStr = Format::ToHexString(instance);
-		    ImGui::SetNextItemWidth(200.0f);
-		    ImGui::InputText("GMalloc value", &gmallocValStr, ImGuiInputTextFlags_ReadOnly);
-		    GUI::CopyButton("Copy##gmalloc", gmallocValStr.c_str());
-		    GUI::SameLineSpacing_relative(50.0f);
-		    if (ImGui::Button("Test Malloc/Free"))
-		    {
-		        GAME_THREAD_EXECUTE({
-		            void* test = GMalloc.Malloc(100);
-		            if (test)
-		            {
-		                LOG("Allocation successful - this is likely the real GMalloc");
-		                GMalloc.Free(test);
-		            }
-		            else
-		                LOG("Allocation failed - GMalloc is likely invalid :(");
-		        });
-		    }
-		}
-		else
-		    ImGui::TextColored(GUI::Colors::Red, "GMalloc is null :(");
-		*/
 	}
 
 	GUI::alt_settings_footer("Need help? Join the Discord", "https://discord.gg/d5ahhQmJbJ");
