@@ -1,6 +1,6 @@
 #pragma once
-#include "Cvars.hpp"
 #include <ModUtils/wrappers/GFxWrapper.hpp>
+#include "Cvars.hpp"
 
 template <typename Derived> class Component
 {

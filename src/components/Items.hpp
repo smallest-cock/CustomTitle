@@ -4,8 +4,8 @@
 class ItemsComponent : Component<ItemsComponent>
 {
 public:
-	ItemsComponent();
-	~ItemsComponent();
+	ItemsComponent() {}
+	~ItemsComponent() {}
 
 	static constexpr std::string_view componentName = "Items";
 

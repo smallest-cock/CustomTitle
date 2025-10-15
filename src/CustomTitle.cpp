@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "CustomTitle.hpp"
+#include "components/Instances.hpp"
 #include "components/Titles.hpp"
 #include "components/Textures.hpp"
 #include "HookManager.hpp"

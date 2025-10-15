@@ -50,9 +50,7 @@ uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* p
 		if (*reinterpret_cast<unsigned char*>(retAddress) == pattern[pos] || mask[pos] == '?')
 		{
 			if (pos == maskLength)
-			{
 				return (retAddress - maskLength);
-			}
 			pos++;
 		}
 		else

@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Items.hpp"
-
-ItemsComponent::ItemsComponent() {}
-ItemsComponent::~ItemsComponent() {}
+#include "Instances.hpp"
 
 UOnlineProduct_TA* ItemsComponent::SpawnProduct(int item,
     TArray<FOnlineProductAttribute>                 attributes,

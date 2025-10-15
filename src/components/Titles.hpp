@@ -1,5 +1,6 @@
 #pragma once
 #include "Component.hpp"
+#include <ModUtils/util/Utils.hpp>
 #include <optional>
 #include <string_view>
 
