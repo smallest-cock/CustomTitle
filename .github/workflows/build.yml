@@ -123,10 +123,12 @@ jobs:
             2. Click `${{ env.PLUGIN_NAME }}.zip` below to download it
 
             3. Extract `${{ env.PLUGIN_NAME }}.zip` and run `install.bat`
-              - If you get an error when running `install.bat`, you can manually drag/drop `${{ env.PLUGIN_NAME }}.dll` into your bakkesmod plugins folder located here:
-                ```
-                %appdata%\bakkesmod\bakkesmod\plugins
-                ```
+                <details> <summary>Getting an error when running <code>install.bat</code> ?</summary>
+                    <ul><br>
+                        <li>Drag/drop <code>${{ env.PLUGIN_NAME }}.dll</code> into your bakkesmod plugins folder, usually located here:
+                        <br><code>C:\Users\{YOUR USERNAME}\AppData\Roaming\bakkesmod\bakkesmod\plugins</code></li>
+                    </ul>
+                </details>
                 
             ## Notes
             ${{ needs.check-changelog.outputs.changelog }}
