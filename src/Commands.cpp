@@ -1,13 +1,11 @@
 ﻿#include "pch.h"
 #include "Cvars.hpp"
-#include "Macros.hpp"
 #include "CustomTitle.hpp"
 #include "components/Titles.hpp"
 #include "components/Items.hpp"
 
 void CustomTitle::initCommands()
 {
-
 	registerCommand(Commands::spawnItem,
 	    [this](std::vector<std::string> args)
 	    {

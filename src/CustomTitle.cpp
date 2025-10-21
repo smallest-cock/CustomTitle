@@ -14,7 +14,7 @@ void CustomTitle::onLoad()
 {
 	_globalCvarManager = cvarManager;
 
-	if (!Instances.InitGlobals())
+	if (!Instances.initGlobals())
 		return;
 
 	pluginInit();

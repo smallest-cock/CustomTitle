@@ -1,9 +1,9 @@
 #include "pch.h"
+#include <cstdint>
 #include <libloaderapi.h>
 #include "Instances.hpp"
 
 InstancesComponent::InstancesComponent() { OnCreate(); }
-
 InstancesComponent::~InstancesComponent() { OnDestroy(); }
 
 void InstancesComponent::OnCreate()
@@ -34,6 +34,15 @@ void InstancesComponent::OnDestroy()
 
 constexpr auto MODULE_NAME = L"RocketLeague.exe";
 
+uintptr_t findRipRelativeAddr(uintptr_t startAddr, int offsetToDisplacementInt32)
+{
+	if (!startAddr)
+		return 0;
+	uintptr_t ripRelativeOffsetAddr = startAddr + offsetToDisplacementInt32;
+	int32_t   displacement          = *reinterpret_cast<int32_t*>(ripRelativeOffsetAddr);
+	return (ripRelativeOffsetAddr + 4) + displacement;
+};
+
 uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* pattern, const char* mask)
 {
 	MODULEINFO info = {};
@@ -62,19 +71,29 @@ uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* p
 	return NULL;
 }
 
-uintptr_t InstancesComponent::GetGNamesAddress()
+uintptr_t InstancesComponent::findGNamesAddress()
 {
 	unsigned char GNamesPattern[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x35\x25\x02\x00";
 	char          GNamesMask[]    = "??????xx??xxxxxx";
 
-	auto GNamesAddress = FindPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
-
-	return GNamesAddress;
+	return FindPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
 }
 
-uintptr_t InstancesComponent::GetGObjectsAddress() { return GetGNamesAddress() + 0x48; }
+uintptr_t InstancesComponent::findGPsyonixBuildIDAddress()
+{
+	constexpr uint8_t pattern[] = "\x4C\x8B\x0D\x00\x00\x00\x00\x4C\x8D\x05\x00\x00\x00\x00\xBA\xF8\x02\x00\x00";
+	constexpr auto    mask      = "xxx????xxx????xxxxx";
 
-uintptr_t InstancesComponent::getGMallocAddr()
+	uintptr_t foundAddr = FindPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
+	if (!foundAddr)
+	{
+		LOGERROR("GPsyonixBuildID address wasn't found! Returning 0...");
+		return 0;
+	}
+	return findRipRelativeAddr(foundAddr, 3);
+}
+
+uintptr_t InstancesComponent::findGMallocAddress()
 {
 	constexpr uint8_t pattern[] = "\x48\x89\x0D\x00\x00\x00\x00\x48\x8B\x01\xFF\x50\x60";
 	constexpr auto    mask      = "xxx????xxxxxx";
@@ -82,31 +101,53 @@ uintptr_t InstancesComponent::getGMallocAddr()
 	uintptr_t foundAddr = FindPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
 	if (!foundAddr)
 	{
-		LOGERROR("We are returning NULL for GMalloc address...");
-		return NULL;
+		LOGERROR("GMalloc wasn't found! Returning 0...");
+		return 0;
 	}
-
-	// Extract the 32-bit displacement offset from the instruction
-	int32_t displacement = *reinterpret_cast<int32_t*>(foundAddr + 3);
-
-	// Calculate address using RIP-relative formula
-	uintptr_t gMallocAddr = foundAddr + 7 + displacement;
-	return gMallocAddr;
+	return findRipRelativeAddr(foundAddr, 3);
 }
 
-bool InstancesComponent::InitGlobals()
+bool InstancesComponent::initGlobals()
 {
-	uintptr_t gnamesAddr = GetGNamesAddress();
-	GNames               = reinterpret_cast<TArray<FNameEntry*>*>(gnamesAddr);
-	GObjects             = reinterpret_cast<TArray<UObject*>*>(gnamesAddr + 0x48);
+	uintptr_t baseAddr = reinterpret_cast<uintptr_t>(GetModuleHandle(MODULE_NAME));
 
-	uintptr_t gmallocAddr = getGMallocAddr();
-	if (!gmallocAddr)
+	auto psyBuildIdAddr = findGPsyonixBuildIDAddress();
+	if (!psyBuildIdAddr)
+		return false; // we cant find GPsyonixBuildID ... return false?
+
+	GPsyonixBuildID             = reinterpret_cast<wchar_t**>(psyBuildIdAddr);
+	FString GPsyonixBuildIDFstr = *GPsyonixBuildID;
+	auto    buildIdStr          = GPsyonixBuildIDFstr.ToString();
+	LOG("Found GPsyonixBuildID: {}", buildIdStr);
+
+	if (buildIdStr == GPSYONIXBUILDID_STRING)
 	{
-		LOGERROR("Failed to find GMalloc address via pattern scan");
-		return false;
+		// use offsets like a G
+		LOG("Game build is the same as what our internal SDK uses :) Using offsets to set globals...");
+		GMalloc  = baseAddr + GMALLOC_OFFSET;
+		GNames   = reinterpret_cast<GNames_t>(baseAddr + GNAMES_OFFSET);
+		GObjects = reinterpret_cast<GObjects_t>(baseAddr + GOBJECTS_OFFSET);
 	}
-	GMalloc = gmallocAddr;
+	else
+	{
+		LOG("WARNING: Game version doesn't match plugin's internal SDK. This plugin probably needs to be updated!");
+		LOG("GPsyonixBuildID: \"{}\"", buildIdStr);
+		LOG("Build ID used in plugin's internal SDK: \"{}\"", GPSYONIXBUILDID_STRING);
+
+		// fall back to pattern scanning for globals
+		LOG("Using fallback pattern scanning to initialize globals...");
+		uintptr_t gnamesAddr = findGNamesAddress();
+		GNames               = reinterpret_cast<GNames_t>(gnamesAddr);
+		GObjects             = reinterpret_cast<GObjects_t>(gnamesAddr + 0x48);
+
+		uintptr_t gmallocAddr = findGMallocAddress();
+		if (!gmallocAddr)
+		{
+			LOGERROR("Failed to find GMalloc address via pattern scan");
+			return false;
+		}
+		GMalloc = gmallocAddr;
+	}
 
 	return CheckGlobals();
 }

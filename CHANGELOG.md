@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.7
+- Optimized plugin init a tiny bit
+- Updated internal SDK to match latest version of RL (v2.60)
+
 ## v1.1.6
 - Updated internal SDK to match latest version of RL (v2.59)
 
