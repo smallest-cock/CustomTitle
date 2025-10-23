@@ -359,7 +359,7 @@ void TitlesComponent::initCvars()
 		    GAME_THREAD_EXECUTE({
 			    if (!*m_enabled)
 			    {
-				    Instances.SpawnNotification("Custom Title", "Spawning requires custom title to be enabled!", 4, true);
+				    Instances.spawnNotification("Custom Title", "Spawning requires custom title to be enabled!", 4, true);
 				    return;
 			    }
 			    spawnSelectedPreset();
@@ -391,7 +391,7 @@ void TitlesComponent::removeUserCustomTitle()
 	}
 
 	// banner
-	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+	auto* pt = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 	if (pt)
 	{
 		pt->UpdatePlayerTitles(); // triggers the UpdateSelectedTitle hooks
@@ -423,7 +423,7 @@ void TitlesComponent::handleUnload()
 
 	// restore equipped title's OG appearance...
 	// banner
-	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+	auto* pt = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 	if (pt)
 	{
 		pt->UpdatePlayerTitles(); // triggers the UpdateSelectedTitle hooks
@@ -622,7 +622,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 
 				    LOG(successMsg);
 				    if (*m_notifyWhenApplyingOthersTitle)
-					    Instances.SpawnNotification("custom title", successMsg, 3, true);
+					    Instances.spawnNotification("custom title", successMsg, 3, true);
 			    }
 
 			    ,
@@ -646,7 +646,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 
 		LOG(successMsg);
 		if (*m_notifyWhenApplyingOthersTitle)
-			Instances.SpawnNotification("custom title", successMsg, 3, true);
+			Instances.spawnNotification("custom title", successMsg, 3, true);
 	}
 }
 
@@ -810,7 +810,7 @@ void TitlesComponent::writePresetsToJson(bool notification) const
 	LOG(msg);
 
 	if (notification)
-		GAME_THREAD_EXECUTE({ Instances.SpawnNotification("custom title", msg, 3.0f, true); }, msg);
+		GAME_THREAD_EXECUTE({ Instances.spawnNotification("custom title", msg, 3.0f, true); }, msg);
 }
 
 void TitlesComponent::addPresetsFromJson()
@@ -843,10 +843,10 @@ void TitlesComponent::addPresetsFromJson()
 
 UTitleConfig_X* TitlesComponent::getTitleConfig(bool forceSearch)
 {
-	static UTitleConfig_X* config = Instances.GetInstanceOf<UTitleConfig_X>();
+	static UTitleConfig_X* config = Instances.getInstanceOf<UTitleConfig_X>();
 
 	if (forceSearch || !validUObject(config))
-		config = Instances.GetInstanceOf<UTitleConfig_X>();
+		config = Instances.getInstanceOf<UTitleConfig_X>();
 
 	return config;
 }
@@ -970,7 +970,7 @@ void TitlesComponent::applyPresetToBanner(const TitleAppearance& title, UGFxData
 {
 	if (!validUObject(gfxRow))
 	{
-		gfxRow = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+		gfxRow = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 		if (!validUObject(gfxRow))
 			return;
 	}
@@ -1238,7 +1238,7 @@ void TitlesComponent::display_titlePresetInfo()
 		{
 			GAME_THREAD_EXECUTE({
 				updateGameTitleAppearances(nullptr, true);
-				Instances.SpawnNotification("custom title", "Updated game title presets", 3);
+				Instances.spawnNotification("custom title", "Updated game title presets", 3);
 			});
 		}
 

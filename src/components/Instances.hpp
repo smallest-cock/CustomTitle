@@ -17,7 +17,7 @@ public:
 	void onCreate();
 	void onDestroy();
 
-	// initialize globals for RLSDK
+	// initialize globals for RLSDK Test?
 	uintptr_t findPattern(HMODULE module, const unsigned char* pattern, const char* mask);
 	uintptr_t findGNamesAddress();
 	uintptr_t findGObjectsAddress();

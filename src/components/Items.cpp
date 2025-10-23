@@ -30,7 +30,7 @@ UOnlineProduct_TA* ItemsComponent::SpawnProduct(int item,
 
 bool ItemsComponent::SpawnProductData(const FOnlineProductData& productData, const std::string& spawnMessage, bool animation)
 {
-	UGFxData_ContainerDrops_TA* containerDrops = Instances.GetInstanceOf<UGFxData_ContainerDrops_TA>();
+	UGFxData_ContainerDrops_TA* containerDrops = Instances.getInstanceOf<UGFxData_ContainerDrops_TA>();
 	if (!containerDrops)
 	{
 		LOG("UGFxData_ContainerDrops_TA is null!");
@@ -50,7 +50,7 @@ bool ItemsComponent::SpawnProductData(const FOnlineProductData& productData, con
 		hashId = INT32_MIN;
 	onlineProduct->CachedHash.Id = hashId++;
 
-	USaveData_TA* saveData = Instances.GetSaveData();
+	USaveData_TA* saveData = Instances.getSaveData();
 	if (!saveData)
 	{
 		LOG("USaveData_TA is null!");
