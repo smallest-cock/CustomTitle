@@ -7,9 +7,6 @@ static constexpr int32_t INSTANCES_INTERATE_OFFSET = 10;
 template <typename T>
 concept UObjectOrDerived = std::is_base_of_v<UObject, T>;
 
-using GNames_t   = TArray<FNameEntry*>*;
-using GObjects_t = TArray<UObject*>*;
-
 class InstancesComponent
 {
 public:
@@ -17,27 +14,25 @@ public:
 	~InstancesComponent();
 
 public:
-	void OnCreate();
-	void OnDestroy();
+	void onCreate();
+	void onDestroy();
 
-	bool initGlobals(); // initialize globals for RLSDK
-
-private:
-	uintptr_t FindPattern(HMODULE module, const unsigned char* pattern, const char* mask);
-	bool      AreGObjectsValid();
-	bool      AreGNamesValid();
-	bool      CheckGlobals();
-
+	// initialize globals for RLSDK Test?
+	uintptr_t findPattern(HMODULE module, const unsigned char* pattern, const char* mask);
 	uintptr_t findGNamesAddress();
-	uintptr_t findGMallocAddress();
-	uintptr_t findGPsyonixBuildIDAddress();
+	uintptr_t findGObjectsAddress();
+	uintptr_t findGMallocAddr();
+	bool      initGlobals();
+	bool      areGObjectsValid();
+	bool      areGNamesValid();
+	bool      checkGlobals();
 
 private:
 	std::map<std::string, class UClass*>    m_staticClasses;
 	std::map<std::string, class UFunction*> m_staticFunctions;
 	std::vector<class UObject*>             m_createdObjects;
 
-	bool CheckNotInName(UObject* obj, const std::string& str) { return obj->GetFullName().find(str) == std::string::npos; }
+	bool checkNotInName(UObject* obj, const std::string& str) { return obj->GetFullName().find(str) == std::string::npos; }
 
 public:
 	// Get the default constructor of a class type. Example: UGameData_TA* gameData = GetDefaultInstanceOf<UGameData_TA>();
@@ -57,7 +52,7 @@ public:
 	}
 
 	// Get the most current/active instance of a class. Example: UEngine* engine = GetInstanceOf<UEngine>();
-	template <UObjectOrDerived T> T* GetInstanceOf(bool omitDefaultsAndArchetypes = true)
+	template <UObjectOrDerived T> T* getInstanceOf(bool omitDefaultsAndArchetypes = true)
 	{
 		for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; --i)
 		{
@@ -75,7 +70,7 @@ public:
 	}
 
 	// Get all active instances of a class type. Example: std::vector<APawn*> pawns = GetAllInstancesOf<APawn>();
-	template <UObjectOrDerived T> std::vector<T*> GetAllInstancesOf(bool omitDefaultsAndArchetypes = true)
+	template <UObjectOrDerived T> std::vector<T*> getAllInstancesOf(bool omitDefaultsAndArchetypes = true)
 	{
 		std::vector<T*> objectInstances;
 
@@ -96,7 +91,7 @@ public:
 
 	// Get the most current/active instance of a class, if one isn't found it creates a new instance. Example: UEngine* engine =
 	// GetInstanceOf<UEngine>();
-	template <UObjectOrDerived T> T* GetOrCreateInstance()
+	template <UObjectOrDerived T> T* getOrCreateInstance()
 	{
 		for (int32_t i = (UObject::GObjObjects()->size() - INSTANCES_INTERATE_OFFSET); i > 0; --i)
 		{
@@ -110,11 +105,11 @@ public:
 			return static_cast<T*>(uObject);
 		}
 
-		return CreateInstance<T>();
+		return createInstance<T>();
 	}
 
 	// Get all active instances of a class type. Example: std::vector<APawn*> pawns = GetAllInstancesOf<APawn>();
-	template <UObjectOrDerived T> std::vector<T*> GetAllArchetypeInstancesOf()
+	template <UObjectOrDerived T> std::vector<T*> getAllArchetypeInstancesOf()
 	{
 		std::vector<T*> objectInstances;
 
@@ -134,7 +129,7 @@ public:
 	}
 
 	// Get all default instances of a class type.
-	template <typename T> std::vector<T*> GetAllDefaultInstancesOf()
+	template <typename T> std::vector<T*> getAllDefaultInstancesOf()
 	{
 		std::vector<T*> objectInstances;
 
@@ -158,7 +153,7 @@ public:
 	}
 
 	// Get an object instance by it's name and class type. Example: UTexture2D* texture = FindObject<UTexture2D>("WhiteSquare");
-	template <typename T> T* FindObject(const std::string& objectName, bool bStrictFind = false)
+	template <typename T> T* findObject(const std::string& objectName, bool bStrictFind = false)
 	{
 		if (!std::is_base_of<UObject, T>::value)
 			return nullptr;
@@ -185,7 +180,7 @@ public:
 
 	// Get all object instances by it's name and class type. Example: std::vector<UTexture2D*> textures =
 	// FindAllObjects<UTexture2D>("Noise");
-	template <typename T> std::vector<T*> FindAllObjects(const std::string& objectName)
+	template <typename T> std::vector<T*> findAllObjects(const std::string& objectName)
 	{
 		std::vector<T*> objectInstances;
 
@@ -212,7 +207,7 @@ public:
 
 	// Get all object instances of a class type that contain one of the search terms in its full name
 	template <typename T>
-	std::vector<T*> FindAllObjectsThatMatch(const std::vector<std::string>& searchTerms, const std::vector<std::string>& avoidTerms = {})
+	std::vector<T*> findAllObjectsThatMatch(const std::vector<std::string>& searchTerms, const std::vector<std::string>& avoidTerms = {})
 	{
 		std::vector<T*> objectInstances;
 
@@ -256,7 +251,7 @@ public:
 		return objectInstances;
 	}
 
-	template <typename T> std::vector<T*> GetFilteredPawns()
+	template <typename T> std::vector<T*> getFilteredPawns()
 	{
 		std::vector<T*> returnValues;
 
@@ -279,7 +274,7 @@ public:
 		return returnValues;
 	}
 
-	template <typename T> std::string GetTypeName()
+	template <typename T> std::string getTypeName()
 	{
 		std::string objTypeName = typeid(T).name();
 
@@ -301,14 +296,14 @@ public:
 
 	// =====================================================================================================
 
-	class UClass* FindStaticClass(const std::string& className);
+	class UClass* findStaticClass(const std::string& className);
 
-	class UFunction* FindStaticFunction(const std::string& functionName);
+	class UFunction* findStaticFunction(const std::string& functionName);
 
 	// Creates a new transient instance of a class which then adds it to globals.
 	// YOU are required to make sure these objects eventually get eaten up by the garbage collector in some shape or form.
 	// Example: UObject* newObject = CreateInstance<UObject>();
-	template <typename T> T* CreateInstance()
+	template <typename T> T* createInstance()
 	{
 		T* returnObject = nullptr;
 
@@ -325,7 +320,7 @@ public:
 			// Making sure newly created object doesn't get randomly destoyed by the garbage collector when we don't want it do.
 			if (returnObject)
 			{
-				MarkInvincible(returnObject);
+				markInvincible(returnObject);
 				m_createdObjects.push_back(returnObject);
 			}
 		}
@@ -334,10 +329,10 @@ public:
 	}
 
 	// Set an object's flags to prevent it from being destoryed.
-	void MarkInvincible(class UObject* object);
+	void markInvincible(class UObject* object);
 
 	// Set object as a temporary object and marks it for the garbage collector to destroy.
-	void MarkForDestroy(class UObject* object);
+	void markForDestroy(class UObject* object);
 
 private:
 	class UCanvas*             I_UCanvas;
@@ -364,13 +359,13 @@ public:
 	UOnlinePlayer_X* onlinePlayer = nullptr;
 
 public:
-	AGFxHUD_TA*      GetHUD();
-	UGFxDataStore_X* GetDataStore();
-	USaveData_TA*    GetSaveData();
-	UOnlinePlayer_X* GetOnlinePlayer();
+	AGFxHUD_TA*      getHUD();
+	UGFxDataStore_X* getDataStore();
+	USaveData_TA*    getSaveData();
+	UOnlinePlayer_X* getOnlinePlayer();
 
 public:
-	void SpawnNotification(const std::string& title, const std::string& content, int duration, bool log = false);
+	void spawnNotification(const std::string& title, const std::string& content, int duration, bool log = false);
 
 	inline FString censorStringToFString(const FString& rawStr) { return UOnlineGameWordFilter_X::SanitizePhrase(rawStr); }
 

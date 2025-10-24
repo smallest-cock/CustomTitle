@@ -55,7 +55,7 @@ void TitlesComponent::initHooks()
 	    [this](ActorWrapper Caller, ...)
 	    {
 		    TitleAppearance* preset            = getActivePreset(false);
-		    bool             bannerHasRGB      = preset && preset->useRGB();
+		    bool             bannerHasRGB      = preset && preset->isChroma();
 		    bool             gameHasRGBPresets = m_ingamePresets.rgbPresetsExist();
 
 		    if (!bannerHasRGB && !gameHasRGBPresets)
@@ -359,7 +359,7 @@ void TitlesComponent::initCvars()
 		    GAME_THREAD_EXECUTE({
 			    if (!*m_enabled)
 			    {
-				    Instances.SpawnNotification("Custom Title", "Spawning requires custom title to be enabled!", 4, true);
+				    Instances.spawnNotification("Custom Title", "Spawning requires custom title to be enabled!", 4, true);
 				    return;
 			    }
 			    spawnSelectedPreset();
@@ -391,7 +391,7 @@ void TitlesComponent::removeUserCustomTitle()
 	}
 
 	// banner
-	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+	auto* pt = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 	if (pt)
 	{
 		pt->UpdatePlayerTitles(); // triggers the UpdateSelectedTitle hooks
@@ -423,7 +423,7 @@ void TitlesComponent::handleUnload()
 
 	// restore equipped title's OG appearance...
 	// banner
-	auto* pt = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+	auto* pt = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 	if (pt)
 	{
 		pt->UpdatePlayerTitles(); // triggers the UpdateSelectedTitle hooks
@@ -537,7 +537,7 @@ void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat)
 		return;
 
 	m_ingamePresets.addPreset(pri, *title);
-	if (!title->useRGB())
+	if (!title->isChroma())
 		applyPresetToPri(pri, *title);
 
 	// send title sync chat
@@ -622,7 +622,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 
 				    LOG(successMsg);
 				    if (*m_notifyWhenApplyingOthersTitle)
-					    Instances.SpawnNotification("custom title", successMsg, 3, true);
+					    Instances.spawnNotification("custom title", successMsg, 3, true);
 			    }
 
 			    ,
@@ -646,7 +646,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 
 		LOG(successMsg);
 		if (*m_notifyWhenApplyingOthersTitle)
-			Instances.SpawnNotification("custom title", successMsg, 3, true);
+			Instances.spawnNotification("custom title", successMsg, 3, true);
 	}
 }
 
@@ -810,7 +810,7 @@ void TitlesComponent::writePresetsToJson(bool notification) const
 	LOG(msg);
 
 	if (notification)
-		GAME_THREAD_EXECUTE({ Instances.SpawnNotification("custom title", msg, 3.0f, true); }, msg);
+		GAME_THREAD_EXECUTE({ Instances.spawnNotification("custom title", msg, 3.0f, true); }, msg);
 }
 
 void TitlesComponent::addPresetsFromJson()
@@ -843,10 +843,10 @@ void TitlesComponent::addPresetsFromJson()
 
 UTitleConfig_X* TitlesComponent::getTitleConfig(bool forceSearch)
 {
-	static UTitleConfig_X* config = Instances.GetInstanceOf<UTitleConfig_X>();
+	static UTitleConfig_X* config = Instances.getInstanceOf<UTitleConfig_X>();
 
 	if (forceSearch || !validUObject(config))
-		config = Instances.GetInstanceOf<UTitleConfig_X>();
+		config = Instances.getInstanceOf<UTitleConfig_X>();
 
 	return config;
 }
@@ -970,7 +970,7 @@ void TitlesComponent::applyPresetToBanner(const TitleAppearance& title, UGFxData
 {
 	if (!validUObject(gfxRow))
 	{
-		gfxRow = Instances.GetInstanceOf<UGFxData_PlayerTitles_TA>();
+		gfxRow = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 		if (!validUObject(gfxRow))
 			return;
 	}
@@ -1044,7 +1044,7 @@ void TitlesComponent::display_titlePresetList()
 			textCol.w      = 1.0f; // set alpha channel to 1 when rendering menu so title is always visible
 			ImGui::PushStyleColor(ImGuiCol_Text, textCol);
 
-			if (ImGui::Selectable(appearancePreset.m_text.c_str(), m_activePresetIndex == i))
+			if (ImGui::Selectable(appearancePreset.getText().c_str(), m_activePresetIndex == i))
 			{
 				m_activePresetIndex = i;
 				GAME_THREAD_EXECUTE({
@@ -1106,7 +1106,7 @@ void TitlesComponent::display_titlePresetInfo()
 						GUI::SameLineSpacing_absolute(spacing);
 
 						float color[4] = {0, 0, 0, 0};
-						if (m_currentOgAppearance.m_sameTextAndGlowColor)
+						if (m_currentOgAppearance.isSameTextAndGlowColor())
 						{
 							m_currentOgAppearance.getTextColor(color);
 							ImGui::ColorEdit4("##singleColor", &color[0], noEditFlags);
@@ -1152,7 +1152,7 @@ void TitlesComponent::display_titlePresetInfo()
 
 		// text
 		char textBuffer[MAX_TEXT_LENGTH + 1]; // +1 for null terminator
-		std::strncpy(textBuffer, appearance.m_text.c_str(), MAX_TEXT_LENGTH);
+		std::strncpy(textBuffer, appearance.getText().c_str(), MAX_TEXT_LENGTH);
 		textBuffer[MAX_TEXT_LENGTH] = '\0'; // Make sure it's null-terminated
 
 		if (std::strlen(textBuffer) >= MAX_TEXT_LENGTH)
@@ -1161,27 +1161,27 @@ void TitlesComponent::display_titlePresetInfo()
 		ImGui::Text("%d/%d characters", static_cast<int>(std::strlen(textBuffer)), MAX_TEXT_LENGTH);
 		if (ImGui::InputText("Text", textBuffer, MAX_TEXT_LENGTH + 1))
 		{
-			appearance.m_text = textBuffer;
+			appearance.setText(textBuffer);
 
 			GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 		}
 
 		GUI::SameLineSpacing_relative(20);
 
-		if (ImGui::Checkbox("RGB", &appearance.m_useRGB))
+		if (ImGui::Checkbox("RGB", appearance.getChromaPtr()))
 		{
 			GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 		}
 
-		if (!appearance.m_useRGB)
+		if (!appearance.isChroma())
 		{
 			GUI::Spacing(4);
 
-			if (ImGui::Checkbox("Same text & glow color", &appearance.m_sameTextAndGlowColor))
+			if (ImGui::Checkbox("Same text & glow color", appearance.getSameTextAndGlowColorPtr()))
 			{
-				if (appearance.m_sameTextAndGlowColor)
+				if (appearance.isSameTextAndGlowColor())
 				{
-					appearance.setGlowColor(appearance.m_textColor);
+					appearance.setGlowColor(appearance.getTextFColor());
 
 					GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 				}
@@ -1189,7 +1189,7 @@ void TitlesComponent::display_titlePresetInfo()
 
 			GUI::Spacing(2);
 
-			if (appearance.m_sameTextAndGlowColor)
+			if (appearance.isSameTextAndGlowColor())
 			{
 				float color[4] = {0, 0, 0, 0};
 				appearance.getTextColor(color);
@@ -1238,7 +1238,7 @@ void TitlesComponent::display_titlePresetInfo()
 		{
 			GAME_THREAD_EXECUTE({
 				updateGameTitleAppearances(nullptr, true);
-				Instances.SpawnNotification("custom title", "Updated game title presets", 3);
+				Instances.spawnNotification("custom title", "Updated game title presets", 3);
 			});
 		}
 
@@ -1464,7 +1464,7 @@ ImVec4 TitleAppearance::getImGuiGlowColor() const
 
 int32_t TitleAppearance::getIntTextColor() const
 {
-	if (m_useRGB)
+	if (m_chroma)
 		return GRainbowColor::GetDecimal();
 	else
 		return UObject::ColorToInt(m_textColor);
@@ -1472,7 +1472,7 @@ int32_t TitleAppearance::getIntTextColor() const
 
 int32_t TitleAppearance::getIntGlowColor() const
 {
-	if (m_useRGB)
+	if (m_chroma)
 		return GRainbowColor::GetDecimal();
 	else
 		return UObject::ColorToInt(m_glowColor);
@@ -1495,7 +1495,7 @@ std::string TitleAppearance::toEncodedString() const
 	    m_text,
 	    Colors::fcolorToHex(m_textColor),
 	    m_sameTextAndGlowColor ? "-" : Colors::fcolorToHex(m_glowColor),
-	    m_useRGB ? "1" : "0");
+	    m_chroma ? "1" : "0");
 }
 
 json TitleAppearance::toJson() const
@@ -1506,7 +1506,7 @@ json TitleAppearance::toJson() const
 	j["textColor"]            = Colors::fcolorToHexRGBA(m_textColor);
 	j["glowColor"]            = Colors::fcolorToHexRGBA(m_glowColor);
 	j["sameTextAndGlowColor"] = m_sameTextAndGlowColor;
-	j["useRGB"]               = m_useRGB;
+	j["useRGB"]               = m_chroma;
 
 	return j;
 }
@@ -1517,7 +1517,7 @@ void TitleAppearance::fromJson(const json& j)
 	m_textColor            = Colors::hexRGBAtoFColor(j.value("textColor", "0xFFFFFFFF"));
 	m_glowColor            = Colors::hexRGBAtoFColor(j.value("glowColor", "0xFFFFFFFF"));
 	m_sameTextAndGlowColor = j.value("sameTextAndGlowColor", true);
-	m_useRGB               = j.value("useRGB", false);
+	m_chroma               = j.value("useRGB", false);
 }
 
 bool TitleAppearance::operator==(const TitleAppearance& other) const
@@ -1537,7 +1537,7 @@ void InGamePresetManager::addPreset(UGFxData_PRI_TA* player, const TitleAppearan
 	if (!inserted)
 		it->second = appearance;
 
-	if (appearance.useRGB())
+	if (appearance.isChroma())
 	{
 		if (!inRGBList(it))
 			m_rgbPresets.push_back(it);

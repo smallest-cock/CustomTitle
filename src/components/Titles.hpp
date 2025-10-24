@@ -5,13 +5,13 @@
 #include <string_view>
 
 // class TitleAppearance // i wan make class but too lazy switch to using getters/setters in TitlesComponent class
-struct TitleAppearance
+class TitleAppearance
 {
 	std::string m_text                 = "{legend} {grandchampion} example {gold} {champion}";
 	FColor      m_textColor            = {255, 255, 255, 255};
 	FColor      m_glowColor            = {255, 255, 255, 255};
 	bool        m_sameTextAndGlowColor = true;
-	bool        m_useRGB               = false;
+	bool        m_chroma               = false;
 
 public:
 	TitleAppearance() {}
@@ -25,7 +25,7 @@ public:
 	static std::optional<TitleAppearance> fromEncodedStr(const std::string& str); // factory func
 	FPlayerTitleData                      toTitleData(const FName& id) const;
 
-	// getters
+	// Getters
 	std::string getText() const { return m_text; }
 	FString     getTextFStr() const { return FString::create(m_text); }
 	FColor      getTextFColor() const { return m_textColor; }
@@ -36,16 +36,19 @@ public:
 	ImVec4      getImGuiGlowColor() const;
 	int32_t     getIntTextColor() const;
 	int32_t     getIntGlowColor() const;
-	bool        useRGB() const { return m_useRGB; }
+	bool*       getChromaPtr() { return &m_chroma; }
+	bool*       getSameTextAndGlowColorPtr() { return &m_sameTextAndGlowColor; }
+	bool        isChroma() const { return m_chroma; }
+	bool        isSameTextAndGlowColor() const { return m_sameTextAndGlowColor; }
 
-	// setters
+	// Setters
 	void setText(const std::string& str) { m_text = str; }
 	void setTextColor(const FColor& newCol) { m_textColor = newCol; }
 	void setTextColor(const float (&newCol)[4]) { m_textColor = Colors::toFColor(newCol); }
 	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
 	void setGlowColor(const float (&newCol)[4]) { m_glowColor = Colors::toFColor(newCol); }
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
-	void setUseRGB(bool val) { m_useRGB = val; }
+	void setUseRGB(bool val) { m_chroma = val; }
 
 	void        clear();
 	std::string getDebugTextColorStr() const;
