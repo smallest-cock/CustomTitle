@@ -4,14 +4,13 @@
 #include <optional>
 #include <string_view>
 
-// class TitleAppearance // i wan make class but too lazy switch to using getters/setters in TitlesComponent class
 class TitleAppearance
 {
 	std::string m_text                 = "{legend} {grandchampion} example {gold} {champion}";
 	FColor      m_textColor            = {255, 255, 255, 255};
 	FColor      m_glowColor            = {255, 255, 255, 255};
 	bool        m_sameTextAndGlowColor = true;
-	bool        m_chroma               = false;
+	bool        m_useRGB               = false;
 
 public:
 	TitleAppearance() {}
@@ -36,9 +35,9 @@ public:
 	ImVec4      getImGuiGlowColor() const;
 	int32_t     getIntTextColor() const;
 	int32_t     getIntGlowColor() const;
-	bool*       getChromaPtr() { return &m_chroma; }
+	bool*       getUseRGBPtr() { return &m_useRGB; }
 	bool*       getSameTextAndGlowColorPtr() { return &m_sameTextAndGlowColor; }
-	bool        isChroma() const { return m_chroma; }
+	bool        usesRGB() const { return m_useRGB; }
 	bool        isSameTextAndGlowColor() const { return m_sameTextAndGlowColor; }
 
 	// Setters
@@ -48,7 +47,7 @@ public:
 	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
 	void setGlowColor(const float (&newCol)[4]) { m_glowColor = Colors::toFColor(newCol); }
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
-	void setUseRGB(bool val) { m_chroma = val; }
+	void setUseRGB(bool val) { m_useRGB = val; }
 
 	void        clear();
 	std::string getDebugTextColorStr() const;

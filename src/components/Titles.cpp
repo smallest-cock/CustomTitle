@@ -55,7 +55,7 @@ void TitlesComponent::initHooks()
 	    [this](ActorWrapper Caller, ...)
 	    {
 		    TitleAppearance* preset            = getActivePreset(false);
-		    bool             bannerHasRGB      = preset && preset->isChroma();
+		    bool             bannerHasRGB      = preset && preset->usesRGB();
 		    bool             gameHasRGBPresets = m_ingamePresets.rgbPresetsExist();
 
 		    if (!bannerHasRGB && !gameHasRGBPresets)
@@ -537,7 +537,7 @@ void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat)
 		return;
 
 	m_ingamePresets.addPreset(pri, *title);
-	if (!title->isChroma())
+	if (!title->usesRGB())
 		applyPresetToPri(pri, *title);
 
 	// send title sync chat
@@ -1168,12 +1168,12 @@ void TitlesComponent::display_titlePresetInfo()
 
 		GUI::SameLineSpacing_relative(20);
 
-		if (ImGui::Checkbox("RGB", appearance.getChromaPtr()))
+		if (ImGui::Checkbox("RGB", appearance.getUseRGBPtr()))
 		{
 			GAME_THREAD_EXECUTE({ applySelectedAppearanceToUser(); });
 		}
 
-		if (!appearance.isChroma())
+		if (!appearance.usesRGB())
 		{
 			GUI::Spacing(4);
 
@@ -1464,7 +1464,7 @@ ImVec4 TitleAppearance::getImGuiGlowColor() const
 
 int32_t TitleAppearance::getIntTextColor() const
 {
-	if (m_chroma)
+	if (m_useRGB)
 		return GRainbowColor::GetDecimal();
 	else
 		return UObject::ColorToInt(m_textColor);
@@ -1472,7 +1472,7 @@ int32_t TitleAppearance::getIntTextColor() const
 
 int32_t TitleAppearance::getIntGlowColor() const
 {
-	if (m_chroma)
+	if (m_useRGB)
 		return GRainbowColor::GetDecimal();
 	else
 		return UObject::ColorToInt(m_glowColor);
@@ -1495,7 +1495,7 @@ std::string TitleAppearance::toEncodedString() const
 	    m_text,
 	    Colors::fcolorToHex(m_textColor),
 	    m_sameTextAndGlowColor ? "-" : Colors::fcolorToHex(m_glowColor),
-	    m_chroma ? "1" : "0");
+	    m_useRGB ? "1" : "0");
 }
 
 json TitleAppearance::toJson() const
@@ -1506,7 +1506,7 @@ json TitleAppearance::toJson() const
 	j["textColor"]            = Colors::fcolorToHexRGBA(m_textColor);
 	j["glowColor"]            = Colors::fcolorToHexRGBA(m_glowColor);
 	j["sameTextAndGlowColor"] = m_sameTextAndGlowColor;
-	j["useRGB"]               = m_chroma;
+	j["useRGB"]               = m_useRGB;
 
 	return j;
 }
@@ -1517,7 +1517,7 @@ void TitleAppearance::fromJson(const json& j)
 	m_textColor            = Colors::hexRGBAtoFColor(j.value("textColor", "0xFFFFFFFF"));
 	m_glowColor            = Colors::hexRGBAtoFColor(j.value("glowColor", "0xFFFFFFFF"));
 	m_sameTextAndGlowColor = j.value("sameTextAndGlowColor", true);
-	m_chroma               = j.value("useRGB", false);
+	m_useRGB               = j.value("useRGB", false);
 }
 
 bool TitleAppearance::operator==(const TitleAppearance& other) const
@@ -1537,7 +1537,7 @@ void InGamePresetManager::addPreset(UGFxData_PRI_TA* player, const TitleAppearan
 	if (!inserted)
 		it->second = appearance;
 
-	if (appearance.isChroma())
+	if (appearance.usesRGB())
 	{
 		if (!inRGBList(it))
 			m_rgbPresets.push_back(it);
