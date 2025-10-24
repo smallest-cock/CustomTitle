@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.7-hotfix
+## v1.1.7-hotfix
  - Fixed startup crashes for Steam users #1 #2
 
 ## v1.1.7
