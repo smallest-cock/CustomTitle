@@ -91,7 +91,7 @@ void TexturesComponent::findImages(bool notification)
 	LOG(logMsg);
 
 	if (notification)
-		GAME_THREAD_EXECUTE({ Instances.SpawnNotification("custom title", logMsg, 3); }, logMsg);
+		GAME_THREAD_EXECUTE({ Instances.spawnNotification("custom title", logMsg, 3); }, logMsg);
 }
 
 void TexturesComponent::initIconCustomizations()
@@ -205,14 +205,14 @@ void TexturesComponent::writeCustomizationsToJson(bool notification) const
 	if (notification)
 	{
 		GAME_THREAD_EXECUTE({
-			Instances.SpawnNotification("custom title", std::format("Updated \"{}\"", m_iconCustomizationsJson.filename().string()), 3);
+			Instances.spawnNotification("custom title", std::format("Updated \"{}\"", m_iconCustomizationsJson.filename().string()), 3);
 		});
 	}
 }
 
 UTexture* TexturesComponent::findIconUTexture(const IconCustomizationState& icon)
 {
-	UTexture* tex = Instances.FindObject<UTexture2D>(icon.textureName);
+	UTexture* tex = Instances.findObject<UTexture2D>(icon.textureName);
 	if (!tex)
 	{
 		LOGERROR("Unable to find UTexture for icon using name: \"{}\"", icon.textureName);

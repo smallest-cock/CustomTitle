@@ -1,12 +1,12 @@
 #include "pch.h"
-#include <cstdint>
 #include <libloaderapi.h>
 #include "Instances.hpp"
 
-InstancesComponent::InstancesComponent() { OnCreate(); }
-InstancesComponent::~InstancesComponent() { OnDestroy(); }
+InstancesComponent::InstancesComponent() { onCreate(); }
 
-void InstancesComponent::OnCreate()
+InstancesComponent::~InstancesComponent() { onDestroy(); }
+
+void InstancesComponent::onCreate()
 {
 	I_UCanvas             = nullptr;
 	I_AHUD                = nullptr;
@@ -14,7 +14,7 @@ void InstancesComponent::OnCreate()
 	I_APlayerController   = nullptr;
 }
 
-void InstancesComponent::OnDestroy()
+void InstancesComponent::onDestroy()
 {
 	m_staticClasses.clear();
 	m_staticFunctions.clear();
@@ -24,7 +24,7 @@ void InstancesComponent::OnDestroy()
 		if (!uObject)
 			continue;
 
-		MarkForDestroy(uObject);
+		markForDestroy(uObject);
 	}
 
 	m_createdObjects.clear();
@@ -34,16 +34,7 @@ void InstancesComponent::OnDestroy()
 
 constexpr auto MODULE_NAME = L"RocketLeague.exe";
 
-uintptr_t findRipRelativeAddr(uintptr_t startAddr, int offsetToDisplacementInt32)
-{
-	if (!startAddr)
-		return 0;
-	uintptr_t ripRelativeOffsetAddr = startAddr + offsetToDisplacementInt32;
-	int32_t   displacement          = *reinterpret_cast<int32_t*>(ripRelativeOffsetAddr);
-	return (ripRelativeOffsetAddr + 4) + displacement;
-};
-
-uintptr_t InstancesComponent::FindPattern(HMODULE module, const unsigned char* pattern, const char* mask)
+uintptr_t InstancesComponent::findPattern(HMODULE module, const unsigned char* pattern, const char* mask)
 {
 	MODULEINFO info = {};
 	GetModuleInformation(GetCurrentProcess(), module, &info, sizeof(MODULEINFO));
@@ -76,83 +67,51 @@ uintptr_t InstancesComponent::findGNamesAddress()
 	unsigned char GNamesPattern[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x35\x25\x02\x00";
 	char          GNamesMask[]    = "??????xx??xxxxxx";
 
-	return FindPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
+	auto GNamesAddress = findPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
+
+	return GNamesAddress;
 }
 
-uintptr_t InstancesComponent::findGPsyonixBuildIDAddress()
-{
-	constexpr uint8_t pattern[] = "\x4C\x8B\x0D\x00\x00\x00\x00\x4C\x8D\x05\x00\x00\x00\x00\xBA\xF8\x02\x00\x00";
-	constexpr auto    mask      = "xxx????xxx????xxxxx";
+uintptr_t InstancesComponent::findGObjectsAddress() { return findGNamesAddress() + 0x48; }
 
-	uintptr_t foundAddr = FindPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
-	if (!foundAddr)
-	{
-		LOGERROR("GPsyonixBuildID address wasn't found! Returning 0...");
-		return 0;
-	}
-	return findRipRelativeAddr(foundAddr, 3);
-}
-
-uintptr_t InstancesComponent::findGMallocAddress()
+uintptr_t InstancesComponent::findGMallocAddr()
 {
 	constexpr uint8_t pattern[] = "\x48\x89\x0D\x00\x00\x00\x00\x48\x8B\x01\xFF\x50\x60";
 	constexpr auto    mask      = "xxx????xxxxxx";
 
-	uintptr_t foundAddr = FindPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
+	uintptr_t foundAddr = findPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
 	if (!foundAddr)
 	{
-		LOGERROR("GMalloc wasn't found! Returning 0...");
-		return 0;
+		LOGERROR("We are returning NULL for GMalloc address...");
+		return NULL;
 	}
-	return findRipRelativeAddr(foundAddr, 3);
+
+	// Extract the 32-bit displacement offset from the instruction
+	int32_t displacement = *reinterpret_cast<int32_t*>(foundAddr + 3);
+
+	// Calculate address using RIP-relative formula
+	uintptr_t gMallocAddr = foundAddr + 7 + displacement;
+	return gMallocAddr;
 }
 
 bool InstancesComponent::initGlobals()
 {
-	uintptr_t baseAddr = reinterpret_cast<uintptr_t>(GetModuleHandle(MODULE_NAME));
+	uintptr_t gnamesAddr = findGNamesAddress();
+	GNames               = reinterpret_cast<TArray<FNameEntry*>*>(gnamesAddr);
+	GObjects             = reinterpret_cast<TArray<UObject*>*>(gnamesAddr + 0x48);
 
-	auto psyBuildIdAddr = findGPsyonixBuildIDAddress();
-	if (!psyBuildIdAddr)
-		return false; // we cant find GPsyonixBuildID ... return false?
-
-	GPsyonixBuildID             = reinterpret_cast<wchar_t**>(psyBuildIdAddr);
-	FString GPsyonixBuildIDFstr = *GPsyonixBuildID;
-	auto    buildIdStr          = GPsyonixBuildIDFstr.ToString();
-	LOG("Found GPsyonixBuildID: {}", buildIdStr);
-
-	if (buildIdStr == GPSYONIXBUILDID_STRING)
+	uintptr_t gmallocAddr = findGMallocAddr();
+	if (!gmallocAddr)
 	{
-		// use offsets like a G
-		LOG("Game build is the same as what our internal SDK uses :) Using offsets to set globals...");
-		GMalloc  = baseAddr + GMALLOC_OFFSET;
-		GNames   = reinterpret_cast<GNames_t>(baseAddr + GNAMES_OFFSET);
-		GObjects = reinterpret_cast<GObjects_t>(baseAddr + GOBJECTS_OFFSET);
+		LOGERROR("Failed to find GMalloc address via pattern scan");
+		return false;
 	}
-	else
-	{
-		LOG("WARNING: Game version doesn't match plugin's internal SDK. This plugin probably needs to be updated!");
-		LOG("GPsyonixBuildID: \"{}\"", buildIdStr);
-		LOG("Build ID used in plugin's internal SDK: \"{}\"", GPSYONIXBUILDID_STRING);
+	GMalloc = gmallocAddr;
 
-		// fall back to pattern scanning for globals
-		LOG("Using fallback pattern scanning to initialize globals...");
-		uintptr_t gnamesAddr = findGNamesAddress();
-		GNames               = reinterpret_cast<GNames_t>(gnamesAddr);
-		GObjects             = reinterpret_cast<GObjects_t>(gnamesAddr + 0x48);
-
-		uintptr_t gmallocAddr = findGMallocAddress();
-		if (!gmallocAddr)
-		{
-			LOGERROR("Failed to find GMalloc address via pattern scan");
-			return false;
-		}
-		GMalloc = gmallocAddr;
-	}
-
-	return CheckGlobals();
+	return checkGlobals();
 }
 
-bool InstancesComponent::AreGObjectsValid()
+bool InstancesComponent::areGObjectsValid()
 {
 	if (UObject::GObjObjects()->size() > 0 && UObject::GObjObjects()->capacity() > UObject::GObjObjects()->size())
 	{
@@ -162,7 +121,7 @@ bool InstancesComponent::AreGObjectsValid()
 	return false;
 }
 
-bool InstancesComponent::AreGNamesValid()
+bool InstancesComponent::areGNamesValid()
 {
 	if (FName::Names()->size() > 0 && FName::Names()->capacity() > FName::Names()->size())
 	{
@@ -172,10 +131,10 @@ bool InstancesComponent::AreGNamesValid()
 	return false;
 }
 
-bool InstancesComponent::CheckGlobals()
+bool InstancesComponent::checkGlobals()
 {
-	bool gnamesValid   = GNames && AreGNamesValid();
-	bool gobjectsValid = GObjects && AreGObjectsValid();
+	bool gnamesValid   = GNames && areGNamesValid();
+	bool gobjectsValid = GObjects && areGObjectsValid();
 	if (!gnamesValid || !gobjectsValid)
 	{
 		LOG("(onLoad) Error: RLSDK classes are wrong... plugin needs an update :(");
@@ -189,7 +148,7 @@ bool InstancesComponent::CheckGlobals()
 
 // ===========================================================================================================
 
-class UClass* InstancesComponent::FindStaticClass(const std::string& className)
+class UClass* InstancesComponent::findStaticClass(const std::string& className)
 {
 	if (m_staticClasses.empty())
 	{
@@ -215,7 +174,7 @@ class UClass* InstancesComponent::FindStaticClass(const std::string& className)
 	return nullptr;
 }
 
-class UFunction* InstancesComponent::FindStaticFunction(const std::string& className)
+class UFunction* InstancesComponent::findStaticFunction(const std::string& className)
 {
 	if (m_staticFunctions.empty())
 	{
@@ -241,7 +200,7 @@ class UFunction* InstancesComponent::FindStaticFunction(const std::string& class
 	return nullptr;
 }
 
-void InstancesComponent::MarkInvincible(class UObject* object)
+void InstancesComponent::markInvincible(class UObject* object)
 {
 	if (!object)
 		return;
@@ -253,7 +212,7 @@ void InstancesComponent::MarkInvincible(class UObject* object)
 	object->ObjectFlags |= EObjectFlags::RF_RootSet;
 }
 
-void InstancesComponent::MarkForDestroy(class UObject* object)
+void InstancesComponent::markForDestroy(class UObject* object)
 {
 	if (!object)
 		return;
@@ -297,7 +256,7 @@ class APlayerController* InstancesComponent::IAPlayerController()
 {
 	if (!I_APlayerController)
 	{
-		I_APlayerController = GetInstanceOf<APlayerController>();
+		I_APlayerController = getInstanceOf<APlayerController>();
 	}
 
 	return I_APlayerController;
@@ -317,41 +276,41 @@ struct FUniqueNetId InstancesComponent::GetUniqueID()
 
 // ======================= get instance funcs =========================
 
-AGFxHUD_TA* InstancesComponent::GetHUD()
+AGFxHUD_TA* InstancesComponent::getHUD()
 {
 	if (!hud || !hud->IsA<AGFxHUD_TA>())
 	{
-		hud = GetInstanceOf<AGFxHUD_TA>();
+		hud = getInstanceOf<AGFxHUD_TA>();
 	}
 
 	return hud;
 }
 
-UGFxDataStore_X* InstancesComponent::GetDataStore()
+UGFxDataStore_X* InstancesComponent::getDataStore()
 {
 	if (!dataStore || !dataStore->IsA<UGFxDataStore_X>())
 	{
-		dataStore = GetInstanceOf<UGFxDataStore_X>();
+		dataStore = getInstanceOf<UGFxDataStore_X>();
 	}
 
 	return dataStore;
 }
 
-USaveData_TA* InstancesComponent::GetSaveData()
+USaveData_TA* InstancesComponent::getSaveData()
 {
 	if (!saveData || !saveData->IsA<USaveData_TA>())
 	{
-		saveData = GetInstanceOf<USaveData_TA>();
+		saveData = getInstanceOf<USaveData_TA>();
 	}
 
 	return saveData;
 }
 
-UOnlinePlayer_X* InstancesComponent::GetOnlinePlayer()
+UOnlinePlayer_X* InstancesComponent::getOnlinePlayer()
 {
 	if (!onlinePlayer || !onlinePlayer->IsA<UOnlinePlayer_X>())
 	{
-		onlinePlayer = GetInstanceOf<UOnlinePlayer_X>();
+		onlinePlayer = getInstanceOf<UOnlinePlayer_X>();
 	}
 
 	return onlinePlayer;
@@ -359,9 +318,9 @@ UOnlinePlayer_X* InstancesComponent::GetOnlinePlayer()
 
 // ====================================== misc funcs ================================================
 
-void InstancesComponent::SpawnNotification(const std::string& title, const std::string& content, int duration, bool log)
+void InstancesComponent::spawnNotification(const std::string& title, const std::string& content, int duration, bool log)
 {
-	UNotificationManager_TA* notificationManager = Instances.GetInstanceOf<UNotificationManager_TA>();
+	UNotificationManager_TA* notificationManager = Instances.getInstanceOf<UNotificationManager_TA>();
 	if (!notificationManager)
 		return;
 

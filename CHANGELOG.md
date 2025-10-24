@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.7-Hotfix
+ - Fixed Game Crashing
+ - Minor QOL Code Changes
+
 ## v1.1.7
 - Optimized plugin init a tiny bit
 - Updated internal SDK to match latest version of RL (v2.60)
