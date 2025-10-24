@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.1.7-hotfix
- - Fixed game crashes for Steam users during plugin load #1 #2
+ - Fixed startup crashes for Steam users #1 #2
 
 ## v1.1.7
 - Optimized plugin init a tiny bit
