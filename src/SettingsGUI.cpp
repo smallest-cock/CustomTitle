@@ -12,7 +12,7 @@ void CustomTitle::RenderSettings()
 	{
 		GUI::ScopedChild c{"MainSettingsSection", ImVec2(0, content_height)};
 
-		GUI::alt_settings_header(h_label.c_str(), pretty_plugin_version, gameWrapper);
+		GUI::alt_settings_header(h_label.c_str(), plugin_version_display, gameWrapper);
 
 		GUI::Spacing(4);
 		Titles.display_enabledCheckbox();
@@ -220,5 +220,5 @@ void CustomTitle::Info_Tab()
 	GUI::Spacing(8);
 
 	GUI::centerTextColoredX(GUI::Colors::Orange, "This plugin is incompatible with AlphaConsole's custom title feature.");
-	GUI::centerTextColoredX(GUI::Colors::Orange, "Make sure to disable it (dont have text in it) if you're using AlphaConsole.");
+	GUI::centerTextColoredX(GUI::Colors::Orange, "Make sure to disable that feature (dont have text in it) if you're using AlphaConsole.");
 }

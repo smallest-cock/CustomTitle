@@ -4,6 +4,7 @@
 #include "components/Titles.hpp"
 #include "components/Textures.hpp"
 #include "HookManager.hpp"
+#include "version.h"
 
 BAKKESMOD_PLUGIN(CustomTitle, "Custom Title", plugin_version, PLUGINTYPE_FREEPLAY)
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
@@ -39,7 +40,7 @@ void CustomTitle::pluginInit()
 	initHooks();
 
 	Format::construct_label({41, 11, 20, 6, 8, 13, 52, 12, 0, 3, 4, 52, 1, 24, 52, 44, 44, 37, 14, 22}, h_label); // o b f u s a c i o n
-	PluginUpdates::checkForUpdates(stringify_(CustomTitle), short_plugin_version);
+	PluginUpdates::checkForUpdates(stringify_(CustomTitle), VERSION_STR);
 
 	Dx11Data::InitializeKiero();
 	Dx11Data::HookPresent();
