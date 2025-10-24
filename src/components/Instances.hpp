@@ -7,6 +7,9 @@ static constexpr int32_t INSTANCES_INTERATE_OFFSET = 10;
 template <typename T>
 concept UObjectOrDerived = std::is_base_of_v<UObject, T>;
 
+using GNames_t   = TArray<FNameEntry*>*;
+using GObjects_t = TArray<UObject*>*;
+
 class InstancesComponent
 {
 public:
@@ -17,15 +20,16 @@ public:
 	void onCreate();
 	void onDestroy();
 
-	// initialize globals for RLSDK Test?
+	bool initGlobals(); // initialize globals for RLSDK
+
+private:
 	uintptr_t findPattern(HMODULE module, const unsigned char* pattern, const char* mask);
 	uintptr_t findGNamesAddress();
-	uintptr_t findGObjectsAddress();
-	uintptr_t findGMallocAddr();
-	bool      initGlobals();
-	bool      areGObjectsValid();
-	bool      areGNamesValid();
-	bool      checkGlobals();
+	uintptr_t findGMallocAddress();
+
+	bool areGObjectsValid();
+	bool areGNamesValid();
+	bool checkGlobals();
 
 private:
 	std::map<std::string, class UClass*>    m_staticClasses;

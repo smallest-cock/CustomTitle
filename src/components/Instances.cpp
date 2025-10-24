@@ -3,7 +3,6 @@
 #include "Instances.hpp"
 
 InstancesComponent::InstancesComponent() { onCreate(); }
-
 InstancesComponent::~InstancesComponent() { onDestroy(); }
 
 void InstancesComponent::onCreate()
@@ -33,6 +32,15 @@ void InstancesComponent::onDestroy()
 // ========================================= init RLSDK globals ===========================================
 
 constexpr auto MODULE_NAME = L"RocketLeague.exe";
+
+uintptr_t findRipRelativeAddr(uintptr_t startAddr, int offsetToDisplacementInt32)
+{
+	if (!startAddr)
+		return 0;
+	uintptr_t ripRelativeOffsetAddr = startAddr + offsetToDisplacementInt32;
+	int32_t   displacement          = *reinterpret_cast<int32_t*>(ripRelativeOffsetAddr);
+	return (ripRelativeOffsetAddr + 4) + displacement;
+};
 
 uintptr_t InstancesComponent::findPattern(HMODULE module, const unsigned char* pattern, const char* mask)
 {
@@ -67,14 +75,10 @@ uintptr_t InstancesComponent::findGNamesAddress()
 	unsigned char GNamesPattern[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x35\x25\x02\x00";
 	char          GNamesMask[]    = "??????xx??xxxxxx";
 
-	auto GNamesAddress = findPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
-
-	return GNamesAddress;
+	return findPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
 }
 
-uintptr_t InstancesComponent::findGObjectsAddress() { return findGNamesAddress() + 0x48; }
-
-uintptr_t InstancesComponent::findGMallocAddr()
+uintptr_t InstancesComponent::findGMallocAddress()
 {
 	constexpr uint8_t pattern[] = "\x48\x89\x0D\x00\x00\x00\x00\x48\x8B\x01\xFF\x50\x60";
 	constexpr auto    mask      = "xxx????xxxxxx";
@@ -82,25 +86,24 @@ uintptr_t InstancesComponent::findGMallocAddr()
 	uintptr_t foundAddr = findPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
 	if (!foundAddr)
 	{
-		LOGERROR("We are returning NULL for GMalloc address...");
-		return NULL;
+		LOGERROR("GMalloc wasn't found! Returning 0...");
+		return 0;
 	}
-
-	// Extract the 32-bit displacement offset from the instruction
-	int32_t displacement = *reinterpret_cast<int32_t*>(foundAddr + 3);
-
-	// Calculate address using RIP-relative formula
-	uintptr_t gMallocAddr = foundAddr + 7 + displacement;
-	return gMallocAddr;
+	return findRipRelativeAddr(foundAddr, 3);
 }
 
 bool InstancesComponent::initGlobals()
 {
 	uintptr_t gnamesAddr = findGNamesAddress();
-	GNames               = reinterpret_cast<TArray<FNameEntry*>*>(gnamesAddr);
-	GObjects             = reinterpret_cast<TArray<UObject*>*>(gnamesAddr + 0x48);
+	if (!gnamesAddr)
+	{
+		LOGERROR("Failed to find GNames address via pattern scan");
+		return false;
+	}
+	GNames   = reinterpret_cast<GNames_t>(gnamesAddr);
+	GObjects = reinterpret_cast<GObjects_t>(gnamesAddr + 0x48);
 
-	uintptr_t gmallocAddr = findGMallocAddr();
+	uintptr_t gmallocAddr = findGMallocAddress();
 	if (!gmallocAddr)
 	{
 		LOGERROR("Failed to find GMalloc address via pattern scan");
@@ -226,18 +229,12 @@ void InstancesComponent::markForDestroy(class UObject* object)
 		m_createdObjects.erase(objectIt);
 }
 
-class UEngine* InstancesComponent::IUEngine() { return UEngine::GetEngine(); }
-
-class UAudioDevice* InstancesComponent::IUAudioDevice() { return UEngine::GetAudioDevice(); }
-
-class AWorldInfo* InstancesComponent::IAWorldInfo() { return UEngine::GetCurrentWorldInfo(); }
-
-class UCanvas* InstancesComponent::IUCanvas() { return I_UCanvas; }
-
-class AHUD* InstancesComponent::IAHUD() { return I_AHUD; }
-
-class UFileSystem* InstancesComponent::IUFileSystem() { return (UFileSystem*)UFileSystem::StaticClass(); }
-
+class UEngine*             InstancesComponent::IUEngine() { return UEngine::GetEngine(); }
+class UAudioDevice*        InstancesComponent::IUAudioDevice() { return UEngine::GetAudioDevice(); }
+class AWorldInfo*          InstancesComponent::IAWorldInfo() { return UEngine::GetCurrentWorldInfo(); }
+class UCanvas*             InstancesComponent::IUCanvas() { return I_UCanvas; }
+class AHUD*                InstancesComponent::IAHUD() { return I_AHUD; }
+class UFileSystem*         InstancesComponent::IUFileSystem() { return (UFileSystem*)UFileSystem::StaticClass(); }
 class UGameViewportClient* InstancesComponent::IUGameViewportClient() { return I_UGameViewportClient; }
 
 class ULocalPlayer* InstancesComponent::IULocalPlayer()
