@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.8
+ - Updated internal SDK to match latest version of RL (v2.63)
+
 ## v1.1.7-hotfix
  - Fixed startup crashes for Steam users #1 #2
 

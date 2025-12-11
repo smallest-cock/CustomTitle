@@ -23,7 +23,6 @@ public:
 	bool initGlobals(); // initialize globals for RLSDK
 
 private:
-	uintptr_t findPattern(HMODULE module, const unsigned char* pattern, const char* mask);
 	uintptr_t findGNamesAddress();
 	uintptr_t findGMallocAddress();
 

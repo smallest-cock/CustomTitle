@@ -1,6 +1,8 @@
 #include "pch.h"
-#include <libloaderapi.h>
 #include "Instances.hpp"
+#include "logging.h"
+#include <libloaderapi.h>
+#include <minwindef.h>
 
 InstancesComponent::InstancesComponent() { onCreate(); }
 InstancesComponent::~InstancesComponent() { onDestroy(); }
@@ -32,64 +34,30 @@ void InstancesComponent::onDestroy()
 // ========================================= init RLSDK globals ===========================================
 
 constexpr auto MODULE_NAME = L"RocketLeague.exe";
-
-uintptr_t findRipRelativeAddr(uintptr_t startAddr, int offsetToDisplacementInt32)
-{
-	if (!startAddr)
-		return 0;
-	uintptr_t ripRelativeOffsetAddr = startAddr + offsetToDisplacementInt32;
-	int32_t   displacement          = *reinterpret_cast<int32_t*>(ripRelativeOffsetAddr);
-	return (ripRelativeOffsetAddr + 4) + displacement;
-};
-
-uintptr_t InstancesComponent::findPattern(HMODULE module, const unsigned char* pattern, const char* mask)
-{
-	MODULEINFO info = {};
-	GetModuleInformation(GetCurrentProcess(), module, &info, sizeof(MODULEINFO));
-
-	uintptr_t start  = reinterpret_cast<uintptr_t>(module);
-	size_t    length = info.SizeOfImage;
-
-	size_t pos        = 0;
-	size_t maskLength = std::strlen(mask) - 1;
-
-	for (uintptr_t retAddress = start; retAddress < start + length; retAddress++)
-	{
-		if (*reinterpret_cast<unsigned char*>(retAddress) == pattern[pos] || mask[pos] == '?')
-		{
-			if (pos == maskLength)
-				return (retAddress - maskLength);
-			pos++;
-		}
-		else
-		{
-			retAddress -= pos;
-			pos = 0;
-		}
-	}
-	return NULL;
-}
+HMODULE        rlModule    = GetModuleHandle(MODULE_NAME);
 
 uintptr_t InstancesComponent::findGNamesAddress()
 {
-	unsigned char GNamesPattern[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x35\x25\x02\x00";
-	char          GNamesMask[]    = "??????xx??xxxxxx";
-
-	return findPattern(GetModuleHandle(MODULE_NAME), GNamesPattern, GNamesMask);
+	constexpr auto sig       = "?? ?? ?? ?? ?? ?? 00 00 ?? ?? 01 00 35 25 02 00";
+	uintptr_t      foundAddr = Memory::findPattern(rlModule, sig);
+	if (!foundAddr)
+	{
+		LOGERROR("GNames wasn't found! Returning 0...");
+		return 0;
+	}
+	return foundAddr;
 }
 
 uintptr_t InstancesComponent::findGMallocAddress()
 {
-	constexpr uint8_t pattern[] = "\x48\x89\x0D\x00\x00\x00\x00\x48\x8B\x01\xFF\x50\x60";
-	constexpr auto    mask      = "xxx????xxxxxx";
-
-	uintptr_t foundAddr = findPattern(GetModuleHandle(MODULE_NAME), pattern, mask);
+	constexpr auto sig       = "48 89 0D ?? ?? ?? ?? 48 8B 01 FF 50 60";
+	uintptr_t      foundAddr = Memory::findPattern(rlModule, sig);
 	if (!foundAddr)
 	{
 		LOGERROR("GMalloc wasn't found! Returning 0...");
 		return 0;
 	}
-	return findRipRelativeAddr(foundAddr, 3);
+	return Memory::getRipRelativeAddr(foundAddr, 3);
 }
 
 bool InstancesComponent::initGlobals()

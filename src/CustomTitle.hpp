@@ -51,8 +51,7 @@ private:
 	void Info_Tab();
 
 	// header/footer stuff
-	static constexpr float header_height = 80.0f;
-	static constexpr float footer_height = 40.0f;
+	static constexpr float FOOTER_HEIGHT = 40.0f;
 
 public:
 	void RenderSettings() override;

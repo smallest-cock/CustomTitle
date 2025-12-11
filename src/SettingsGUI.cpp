@@ -8,9 +8,9 @@
 
 void CustomTitle::RenderSettings()
 {
-	const float content_height = ImGui::GetContentRegionAvail().y - footer_height; // available height after accounting for footer
+	const float contentHeight = ImGui::GetContentRegionAvail().y - FOOTER_HEIGHT; // available height after accounting for footer
 	{
-		GUI::ScopedChild c{"MainSettingsSection", ImVec2(0, content_height)};
+		GUI::ScopedChild c{"MainSettingsSection", ImVec2(0, contentHeight)};
 
 		GUI::alt_settings_header(h_label.c_str(), plugin_version_display, gameWrapper);
 

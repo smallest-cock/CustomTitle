@@ -691,7 +691,7 @@ namespace Dx11Data
 ID3D11Device*        pd3dDevice        = nullptr;
 ID3D11DeviceContext* pd3dDeviceContext = nullptr;
 
-typedef HRESULT(__stdcall* PresentFn)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
+using PresentFn    = HRESULT(__stdcall*)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 PresentFn oPresent = nullptr;
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
@@ -728,7 +728,7 @@ void InitializeKiero()
 void HookPresent()
 {
 	// IDXGISwapChain::Present is usually at index 8 in the vtable
-	if (kiero::bind(8, (void**)&oPresent, hkPresent) == kiero::Status::Success)
+	if (kiero::bind(8, (void**)&oPresent, (void*)hkPresent) == kiero::Status::Success)
 		LOG("Successfully hooked IDXGISwapChain::Present function");
 	else
 		LOG("Failed to hook IDXGISwapChain::Present function");
