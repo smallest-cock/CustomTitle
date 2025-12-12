@@ -103,19 +103,21 @@ jobs:
       - name: 🥵 Prepare release files
         shell: bash
         run: |
-          7z a source.zip * -xr!vcpkg -xr!vcpkg_installed -xr!ninja-build -xr!README.md -xr!build -xr!plugins -xr!scripts -xr!assets -xr!.git
-          mkdir -p dist temp/debug temp/installation_zip
-          mv ./source.zip temp/debug
+          mkdir -p dist temp/installation_zip
           cp ./plugins/*.dll temp/installation_zip
           mv ./scripts/install.bat temp/installation_zip
-          mv ./plugins/*.dll temp/debug
-          mv ./plugins/*.pdb temp/debug
           7z a "dist/${{ env.PLUGIN_NAME }}.zip" ./temp/installation_zip/*
-          7z a dist/debug.zip ./temp/debug/*
+
+      - name: 🔐 Generate SHA256 hashes
+        id: generate_hashes
+        shell: bash
+        run: ./scripts/generate-hashes.sh "plugins/*.dll,dist/*.zip"
 
       - name: 🚀 Create release
         id: create_release
         uses: softprops/action-gh-release@v2
+        env:
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
           tag_name: ${{ env.TAG_NAME }}
           body: |
@@ -134,6 +136,8 @@ jobs:
                 
             ## Notes
             ${{ needs.check-changelog.outputs.changelog }}
+
+            [Build workflow run](${{ env.WORKFLOW_URL }})
           files: dist/*.zip
 
       - name: 🤓 Post release info in discord channel
