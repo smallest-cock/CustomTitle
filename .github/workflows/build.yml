@@ -16,6 +16,8 @@ on:
         required: true
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   check-changelog:
@@ -105,13 +107,18 @@ jobs:
         run: |
           mkdir -p dist temp/installation_zip
           cp ./plugins/*.dll temp/installation_zip
-          mv ./scripts/install.bat temp/installation_zip
+          cp ./scripts/install.bat temp/installation_zip
           7z a "dist/${{ env.PLUGIN_NAME }}.zip" ./temp/installation_zip/*
 
-      - name: 🔐 Generate SHA256 hashes
-        id: generate_hashes
-        shell: bash
-        run: ./scripts/generate-hashes.sh "plugins/*.dll,dist/*.zip"
+      - name: 🔑 Attest release ZIP
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "dist/${{ env.PLUGIN_NAME }}.zip"
+
+      # - name: 🔐 Generate SHA256 hashes
+      #   id: generate_hashes
+      #   shell: bash
+      #   run: ./scripts/generate-hashes.sh "plugins/*.dll,dist/*.zip"
 
       - name: 🚀 Create release
         id: create_release
@@ -137,7 +144,7 @@ jobs:
             ## Notes
             ${{ needs.check-changelog.outputs.changelog }}
 
-            [Build workflow run](${{ env.WORKFLOW_URL }})
+            [GitHub build workflow](${{ env.WORKFLOW_URL }})
           files: dist/*.zip
 
       - name: 🤓 Post release info in discord channel
