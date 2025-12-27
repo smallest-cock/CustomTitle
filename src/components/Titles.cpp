@@ -261,8 +261,10 @@ void TitlesComponent::initHooks()
 		    applySelectedAppearanceToUser();
 	    });
 
-	auto refreshPriTitlePresetsUsingHud = [this](ActorWrapper Caller, void* params, std::string eventName)
+	auto refreshPriTitlePresetsUsingHud = [this](ActorWrapper Caller, void* params, std::string event)
 	{
+		runCommand(Commands::broadcast, event);
+
 		auto* caller = reinterpret_cast<AGFxHUD_TA*>(Caller.memory_address);
 		if (!caller)
 			return;
@@ -270,11 +272,14 @@ void TitlesComponent::initHooks()
 		refreshPriTitlePresets(caller);
 	};
 
-	Hooks.hookEvent(Events::GFxHUD_TA_HandleTeamChanged, HookType::Post, refreshPriTitlePresetsUsingHud);
+	Hooks.hookEventPost(Events::GFxHUD_TA_HandleTeamChanged, refreshPriTitlePresetsUsingHud);
+	Hooks.hookEventPost(Events::GameEvent_TA_Countdown_BeginState, [this](std::string event) { runCommand(Commands::broadcast, event); });
+	Hooks.hookEventPost(
+	    Events::GameEvent_Soccar_TA_Active_StartRound, [this](std::string event) { runCommand(Commands::broadcast, event); });
+	Hooks.hookEventPost(Events::GFxHUD_TA_HandleReplaceBot, [this](std::string event) { runCommand(Commands::broadcast, event); });
 
-	Hooks.hookEvent(Events::GFxData_PRI_TA_SetPlayerTitle, HookType::Post, [this](std::string) { refreshPriTitlePresets(); });
-
-	Hooks.hookEvent(Events::EngineShare_X_EventPreLoadMap, HookType::Post, [this](std::string) { m_ingamePresets.clear(); });
+	Hooks.hookEventPost(Events::GFxData_PRI_TA_SetPlayerTitle, [this](std::string) { refreshPriTitlePresets(); });
+	Hooks.hookEventPost(Events::EngineShare_X_EventPreLoadMap, [this](std::string) { m_ingamePresets.clear(); });
 
 	Hooks.hookEvent(Events::PlayerController_EnterStartState,
 	    HookType::Pre,
@@ -351,6 +356,23 @@ void TitlesComponent::initCvars()
 		    if (!enabled_cvar)
 			    return;
 		    enabled_cvar.setValue(!enabled_cvar.getBoolValue());
+	    });
+
+	registerCommand(Commands::broadcast,
+	    [this](...)
+	    {
+		    if (!*m_enabled || !*m_showTitleToOthers)
+			    return;
+		    if (gameWrapper->IsInFreeplay() || gameWrapper->IsInReplay())
+			    return;
+
+		    auto* pc = Instances.getPlayerController();
+		    if (!pc)
+			    return;
+		    TitleAppearance* preset = getActivePreset();
+		    if (!preset)
+			    return;
+		    sendTitleDataChat(*preset, pc);
 	    });
 
 	registerCommand(Commands::spawnCustomTitle,
@@ -556,7 +578,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 	if (!*m_showOtherPlayerTitles)
 		return;
 
-	LOG("Recieved chat data string: \"{}\"", Format::EscapeBraces(data));
+	LOG("Recieved chat data string: \"{}\"", data);
 
 #ifdef DONT_APPLY_TO_USER
 	if (!validUObject(msg.PRI))
@@ -997,28 +1019,17 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance& appearance, APlay
 {
 	if (!pc)
 	{
-		auto* lp = Instances.IULocalPlayer();
-		if (!lp)
-		{
-			LOGERROR("Instances.IULocalPlayer() is null");
+		pc = Instances.getPlayerController();
+		if (!validUObject(pc))
 			return;
-		}
-
-		if (!lp->Actor || !lp->Actor->IsA<APlayerController_TA>())
-		{
-			LOGERROR("lp->Actor is null or isnt a APlayerController_TA");
-			return;
-		}
-		pc = lp->Actor;
 	}
-
+	if (!pc->IsA<APlayerController_TA>())
+		return;
 	auto* pcTA = static_cast<APlayerController_TA*>(pc);
 
 	std::string titleDataStr = appearance.toEncodedString();
-
 	pcTA->Say_TA(FString::create(titleDataStr), EChatChannel::EChatChannel_Match, FUniqueNetId{}, true, false);
-
-	LOG("Sent title data chat: \"{}\"", Format::EscapeBraces(titleDataStr));
+	LOG("Sent title data chat: \"{}\"", titleDataStr);
 }
 
 // ##############################################################################################################
@@ -1259,8 +1270,8 @@ void TitlesComponent::display_titlePresetInfo()
 					_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
 			}
 			if (*m_enabled)
-				GUI::ToolTip("Press OK at the spawn prompt. Pressing EQUIP NOW can cause buggy behavior.\n\n"
-				             "TIP - Bind this command to a key: %s",
+				GUI::ToolTipFmt("Press OK at the spawn prompt. Pressing EQUIP NOW can cause buggy behavior.\n\n"
+				                "TIP - Bind this command to a key: %s",
 				    Commands::spawnCustomTitle.name);
 			else
 				GUI::ToolTip("Spawning requires custom title to be enabled");

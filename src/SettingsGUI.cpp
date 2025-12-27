@@ -34,7 +34,7 @@ void CustomTitle::RenderSettings()
 		GUI::Spacing(8);
 
 		ImGui::TextColored(GUI::Colors::LightGreen, "Bindable commands:");
-		GUI::ToolTip("Bind these commands to a key in the bakkesmod Bindings tab...");
+		GUI::ToolTip("TIP: Bind these commands to a key in the bakkesmod Bindings tab");
 
 		GUI::Spacing(4);
 
@@ -50,7 +50,7 @@ void CustomTitle::RenderSettings()
 
 			ImGui::SetNextItemWidth(200.0f);
 			ImGui::InputText("", &cmd, ImGuiInputTextFlags_ReadOnly);
-			GUI::ToolTip("%s", desc);
+			GUI::ToolTip(desc);
 			GUI::CopyButton("Copy", cmd.c_str());
 
 			GUI::Spacing(2);

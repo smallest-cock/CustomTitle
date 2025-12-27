@@ -362,26 +362,14 @@ public:
 	UOnlinePlayer_X* onlinePlayer = nullptr;
 
 public:
-	AGFxHUD_TA*      getHUD();
-	UGFxDataStore_X* getDataStore();
-	USaveData_TA*    getSaveData();
-	UOnlinePlayer_X* getOnlinePlayer();
+	AGFxHUD_TA*        getHUD();
+	UGFxDataStore_X*   getDataStore();
+	USaveData_TA*      getSaveData();
+	UOnlinePlayer_X*   getOnlinePlayer();
+	APlayerController* getPlayerController();
 
 public:
 	void spawnNotification(const std::string& title, const std::string& content, int duration, bool log = false);
-
-	inline FString censorStringToFString(const FString& rawStr) { return UOnlineGameWordFilter_X::SanitizePhrase(rawStr); }
-
-	inline FString censorStringToFString(const std::string& rawStr)
-	{
-		if (rawStr.empty())
-			return L"";
-		return censorStringToFString(FString::create(rawStr));
-	}
-
-	inline std::string censorString(const FString& rawStr) { return UOnlineGameWordFilter_X::SanitizePhrase(rawStr).ToString(); }
-
-	inline std::string censorString(const std::string& rawStr) { return censorString(FString::create(rawStr)); }
 };
 
 extern class InstancesComponent Instances;

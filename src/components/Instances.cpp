@@ -281,19 +281,26 @@ UOnlinePlayer_X* InstancesComponent::getOnlinePlayer()
 	return onlinePlayer;
 }
 
+APlayerController* InstancesComponent::getPlayerController()
+{
+	ULocalPlayer* lp = Instances.IULocalPlayer();
+	if (!validUObject(lp) || !validUObject(lp->Actor) || !lp->Actor->IsA<APlayerController>())
+		return nullptr;
+
+	return static_cast<APlayerController*>(lp->Actor);
+}
+
 // ====================================== misc funcs ================================================
 
 void InstancesComponent::spawnNotification(const std::string& title, const std::string& content, int duration, bool log)
 {
-	UNotificationManager_TA* notificationManager = Instances.getInstanceOf<UNotificationManager_TA>();
+	auto* notificationManager = Instances.getInstanceOf<UNotificationManager_TA>();
 	if (!notificationManager)
 		return;
 
 	static UClass* notificationClass = nullptr;
 	if (!notificationClass)
-	{
 		notificationClass = UGenericNotification_TA::StaticClass();
-	}
 
 	UNotification_TA* notification = notificationManager->PopUpOnlyNotification(notificationClass);
 	if (!notification)
@@ -307,9 +314,7 @@ void InstancesComponent::spawnNotification(const std::string& title, const std::
 	notification->PopUpDuration = duration;
 
 	if (log)
-	{
 		LOG("[{}] {}", title.c_str(), content.c_str());
-	}
 }
 
 class InstancesComponent Instances{};

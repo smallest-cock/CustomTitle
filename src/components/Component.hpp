@@ -1,6 +1,7 @@
 #pragma once
 #include <ModUtils/wrappers/GFxWrapper.hpp>
 #include "Cvars.hpp"
+#include "logging.h"
 
 template <typename Derived> class Component
 {
@@ -90,6 +91,13 @@ protected:
 	}
 
 	// commands
+	void runCommand(const CvarData& cvar, std::string_view fromEvent = "", bool log = true)
+	{
+		if (!fromEvent.empty())
+			LOG("Running command from event hook: {}", fromEvent);
+		_globalCvarManager->executeCommand(cvar.name, log);
+	}
+
 	void registerCommand(const CvarData& cvar, std::function<void(std::vector<std::string>)> callback)
 	{
 		_globalCvarManager->registerNotifier(cvar.name, std::move(callback), cvar.description, PERMISSION_ALL);

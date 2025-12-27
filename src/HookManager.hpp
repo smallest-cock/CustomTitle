@@ -1,6 +1,7 @@
 #pragma once
 #include "bakkesmod/wrappers/Engine/ActorWrapper.h"
 #include "bakkesmod/wrappers/GameWrapper.h"
+#include <string>
 #include <unordered_set>
 
 enum class HookType
@@ -19,10 +20,13 @@ struct HookKey
 
 namespace std
 {
-template <> struct hash<HookKey>
-{
-	size_t operator()(const HookKey& k) const { return hash<std::string>()(k.functionName) ^ (hash<int>()(static_cast<int>(k.type)) << 1); }
-};
+	template <> struct hash<HookKey>
+	{
+		size_t operator()(const HookKey& k) const
+		{
+			return hash<std::string>()(k.functionName) ^ (hash<int>()(static_cast<int>(k.type)) << 1);
+		}
+	};
 } // namespace std
 
 class HookManager
@@ -89,6 +93,24 @@ public:
 
 		m_hookedEvents.insert(key);
 		LOG("Hooked function {} (with caller): \"{}\"", type == HookType::Pre ? "PRE" : "POST", eventName);
+	}
+
+	void hookEventPre(const std::string& event, const std::function<void(std::string)>& callback)
+	{
+		hookEvent(event, HookType::Pre, callback);
+	}
+	void hookEventPre(const std::string& event, const std::function<void(ActorWrapper, void*, std::string)>& callback)
+	{
+		hookEvent(event, HookType::Pre, callback);
+	}
+
+	void hookEventPost(const std::string& event, const std::function<void(std::string)>& callback)
+	{
+		hookEvent(event, HookType::Post, callback);
+	}
+	void hookEventPost(const std::string& event, const std::function<void(ActorWrapper, void*, std::string)>& callback)
+	{
+		hookEvent(event, HookType::Post, callback);
 	}
 
 	void unhookEvent(const std::string& eventName, HookType type)

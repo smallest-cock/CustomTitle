@@ -29,3 +29,6 @@ SortIncludes: false
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
+
+NamespaceIndentation: All
+FixNamespaceComments: false # dont add "// namespace MyNamespace" comments at the end of namespace

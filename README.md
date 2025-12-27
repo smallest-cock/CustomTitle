@@ -26,8 +26,9 @@ You can use the following commands in the BakkesMod console (`F6`) or bind them 
 
 | Command | Description | Best Used With |
 |---------|-------------|:--------------:|
-| `customtitle_spawn_custom_title` | Spawn current title preset | Key bind |
 | `customtitle_toggle_enabled` | Toggle custom title on/off | Key bind |
+| `customtitle_broadcast` | Broadcast your custom title to others with the plugin (via the chat system) | Key bind |
+| `customtitle_spawn_custom_title` | Spawn current title preset | Key bind |
 | `customtitle_spawn_item <id>` | Spawn item based on its product ID | Console |
 
 <br>
@@ -74,6 +75,17 @@ This project uses [DirectXTex](https://github.com/microsoft/DirectXTex) and [Min
 More info: [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/consume/manifest-mode?tabs=cmake%2Cbuild-MSBuild#2---integrate-vcpkg-with-your-build-system)
 
 ### 3. Build with CMake
+> [!NOTE]
+> Before building with CMake, the MSVC environment **must** be initialized.
+> This is normally handled automatically by IDEs or certain editor extensions like [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools), but if you're building from the command line, use one of the following methods:
+>
+> - Use an appropriate Windows terminal profile:
+>    - `Developer PowerShell for VS 2022`
+>    - `Developer Command Prompt for VS 2022`
+> - Or run this script once per shell session:
+>   ```
+>   C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
+
 1. Install [CMake](https://cmake.org/download) and [Ninja](https://github.com/ninja-build/ninja/releases) (or another build system if you're not using Ninja)
 2. Run `cmake --preset windows-x64-msvc` (or a custom preset in `CMakeUserPresets.json`) to generate build files in `./build`
 3. Run `cmake --build build`
