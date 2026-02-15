@@ -1,8 +1,7 @@
 #pragma once
 #include "Component.hpp"
 
-class ItemsComponent : Component<ItemsComponent>
-{
+class ItemsComponent : Component<ItemsComponent> {
 public:
 	ItemsComponent() {}
 	~ItemsComponent() {}
@@ -18,15 +17,15 @@ private:
 	unsigned long long GetTimestampLong();
 
 public:
-	UOnlineProduct_TA* SpawnProduct(int item,
+	UOnlineProduct_TA *SpawnProduct(int item,
 	    TArray<FOnlineProductAttribute> attributes   = {},
 	    int                             seriesid     = 0,
 	    int                             tradehold    = 0,
 	    bool                            log          = false,
-	    const std::string&              spawnMessage = "",
+	    const std::string              &spawnMessage = "",
 	    bool                            animation    = true);
 
-	bool SpawnProductData(const FOnlineProductData& productData, const std::string& spawnMessage, bool animation = true);
+	bool SpawnProductData(const FOnlineProductData &productData, const std::string &spawnMessage, bool animation = true);
 };
 
 extern class ItemsComponent Items;

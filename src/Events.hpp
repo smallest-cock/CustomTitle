@@ -1,7 +1,6 @@
 #pragma once
 
-namespace Events
-{
+namespace Events {
 	constexpr auto GFxData_PlayerTitles_TA__HandleLoadoutSaveLoaded_0x1 =
 	    "Function TAGame.GFxData_PlayerTitles_TA.__GFxData_PlayerTitles_TA__HandleLoadoutSaveLoaded_0x1";
 	constexpr auto GFxData_PlayerTitles_TA_UpdateSelectedTitle = "Function TAGame.GFxData_PlayerTitles_TA.UpdateSelectedTitle";

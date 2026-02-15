@@ -6,7 +6,7 @@ ContinuationIndentWidth: 4
 AccessModifierOffset: -4
 
 # Allman style braces
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Attach
 
 # Line breaking and alignment preferences
 ColumnLimit: 140
@@ -21,8 +21,8 @@ PenaltyBreakString: 1000
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 
-PointerAlignment: Left
-ReferenceAlignment: Left
+PointerAlignment: Right
+ReferenceAlignment: Right
 SortIncludes: false
 
 # Control statement formatting
@@ -30,5 +30,8 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 
+# namespace formatting
 NamespaceIndentation: All
-FixNamespaceComments: false # dont add "// namespace MyNamespace" comments at the end of namespace
+FixNamespaceComments: false
+
+AlwaysBreakTemplateDeclarations: Yes

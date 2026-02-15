@@ -1,18 +1,16 @@
 #include "pch.h"
 #include "CustomTitle.hpp"
-#include "components/Instances.hpp"
+#include "util/Instances.hpp"
 #include "components/Titles.hpp"
 #include "components/Textures.hpp"
-#include "HookManager.hpp"
-#include "version.h"
+#include "Version.hpp"
 
 BAKKESMOD_PLUGIN(CustomTitle, "Custom Title", plugin_version, PLUGINTYPE_FREEPLAY)
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 
 class HookManager Hooks{};
 
-void CustomTitle::onLoad()
-{
+void CustomTitle::onLoad() {
 	_globalCvarManager = cvarManager;
 
 	if (!Instances.initGlobals())
@@ -23,16 +21,16 @@ void CustomTitle::onLoad()
 	LOG("Custom Title loaded!");
 }
 
-void CustomTitle::onUnload()
-{
-	Hooks.unhookAllEvents();
+void CustomTitle::onUnload() {
+	// Hooks.unhookAllEvents();
 	Textures.setRestoreOriginalIcons(true); // restore original title icon textures (if any were changed)
 	Titles.handleUnload();
 	Dx11Data::UnhookPresent();
 }
 
-void CustomTitle::pluginInit()
-{
+BakkesMod::Plugin::BakkesModPlugin *CustomTitle::getPlugin() { return this; }
+
+void CustomTitle::pluginInit() {
 	Hooks.init(gameWrapper);
 
 	initCvars();

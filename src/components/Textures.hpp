@@ -4,21 +4,18 @@
 #include <stb_image.h>
 #include <string_view>
 
-namespace stb
-{
-inline void StbiFree(void* ptr) { free(ptr); }
-} // namespace stb
+namespace stb {
+	inline void StbiFree(void *ptr) { free(ptr); }
+}
 
-struct CustomImageData
-{
+struct CustomImageData {
 	std::unique_ptr<stbi_uc, decltype(&stb::StbiFree)> pixelData = {nullptr, stb::StbiFree};
 	uint32_t                                           width     = 0;
 	uint32_t                                           height    = 0;
 	uint8_t                                            channels  = 4; // RGBA
 };
 
-struct IconCustomizationState
-{
+struct IconCustomizationState {
 	std::string iconName;
 	std::string textureName;
 	fs::path    imagePath;
@@ -27,18 +24,17 @@ struct IconCustomizationState
 	static constexpr auto texNamePrefix = "tournament_title_icon_";
 
 	void constructTextureName();
-	void fromJson(const json& data);
+	void fromJson(const json &data);
 	json toJson() const;
 };
 
-class TexturesComponent : Component<TexturesComponent>
-{
+class TexturesComponent : Component<TexturesComponent> {
 public:
 	TexturesComponent() {}
 	~TexturesComponent() {}
 
 	static constexpr std::string_view componentName = "Textures";
-	void                              init(const std::shared_ptr<GameWrapper>& gw);
+	void                              init(const std::shared_ptr<GameWrapper> &gw);
 
 private:
 	void setFilePaths();
@@ -52,8 +48,8 @@ private:
 	std::array<IconCustomizationState, 8> m_iconCustomizations;
 	std::map<std::string, fs::path>       m_images;
 
-	std::unordered_map<fs::path, Microsoft::WRL::ComPtr<ID3D11Texture2D>>  m_loadedCustomTextures;
-	std::unordered_map<UTexture*, Microsoft::WRL::ComPtr<ID3D11Texture2D>> m_originalTextureBackups;
+	std::unordered_map<fs::path, Microsoft::WRL::ComPtr<ID3D11Texture2D>>   m_loadedCustomTextures;
+	std::unordered_map<UTexture *, Microsoft::WRL::ComPtr<ID3D11Texture2D>> m_originalTextureBackups;
 
 	std::atomic<bool> m_applyIconCustomizations = false;
 	std::atomic<bool> m_restoreOriginalIcons    = false;
@@ -66,21 +62,21 @@ private:
 	void writeCustomizationsToJson(bool notification = false) const;
 
 	// texture modding
-	void applyCustomTexture(const IconCustomizationState& icon);
-	void applyOriginalTexture(const IconCustomizationState& icon);
+	void applyCustomTexture(const IconCustomizationState &icon);
+	void applyOriginalTexture(const IconCustomizationState &icon);
 
-	UTexture*                               findIconUTexture(const IconCustomizationState& icon);
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> getTextureFromPath(const std::string& imgPath);
-	void                                    applyCustomImgToTexture(UTexture* target, const fs::path& path);
-	void                                    applyCustomImgToTexture(UTexture* target, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dxTex);
-	bool                                    createImageDataFromPath(const fs::path& path, CustomImageData& outData);
+	UTexture                               *findIconUTexture(const IconCustomizationState &icon);
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> getTextureFromPath(const std::string &imgPath);
+	void                                    applyCustomImgToTexture(UTexture *target, const fs::path &path);
+	void                                    applyCustomImgToTexture(UTexture *target, const Microsoft::WRL::ComPtr<ID3D11Texture2D> &dxTex);
+	bool                                    createImageDataFromPath(const fs::path &path, CustomImageData &outData);
 	// void backupOriginalTexture(UTexture* tex);
 	// void revertToOriginalTexture(UTexture* tex);
 
 	// static
-	static FD3D11Texture2D*          getDxTextureData(UTexture* tex);
-	static ID3D11Texture2D*          getDxTexture2D(UTexture* tex);
-	static ID3D11ShaderResourceView* getDxSRV(UTexture* tex);
+	static FD3D11Texture2D          *getDxTextureData(UTexture *tex);
+	static ID3D11Texture2D          *getDxTexture2D(UTexture *tex);
+	static ID3D11ShaderResourceView *getDxSRV(UTexture *tex);
 
 public:
 	// lil api
@@ -95,17 +91,16 @@ public:
 	static constexpr float SAMELINE_DROPDOWN_SPACING = 150.0f;
 
 	void display_iconCustomizations();
-	void display_iconCustomizationDropdown(IconCustomizationState& state, const std::vector<std::string>& options);
+	void display_iconCustomizationDropdown(IconCustomizationState &state, const std::vector<std::string> &options);
 };
 
 extern class TexturesComponent Textures;
 
-namespace Dx11Data
-{
-extern ID3D11Device*        pd3dDevice;
-extern ID3D11DeviceContext* pd3dDeviceContext;
+namespace Dx11Data {
+	extern ID3D11Device        *pd3dDevice;
+	extern ID3D11DeviceContext *pd3dDeviceContext;
 
-void InitializeKiero();
-void HookPresent();
-void UnhookPresent();
+	void InitializeKiero();
+	void HookPresent();
+	void UnhookPresent();
 } // namespace Dx11Data

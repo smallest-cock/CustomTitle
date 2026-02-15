@@ -4,8 +4,7 @@
 #include <optional>
 #include <string_view>
 
-class TitleAppearance
-{
+class TitleAppearance {
 	std::string m_text                 = "{legend} {grandchampion} example {gold} {champion}";
 	FColor      m_textColor            = {255, 255, 255, 255};
 	FColor      m_glowColor            = {255, 255, 255, 255};
@@ -14,15 +13,13 @@ class TitleAppearance
 
 public:
 	TitleAppearance() {}
-	TitleAppearance(const std::string& text, const FColor& textColor, const FColor& glowColor, bool sameTextAndGlow = true)
-	    : m_text(text), m_textColor(textColor), m_glowColor(glowColor), m_sameTextAndGlowColor(sameTextAndGlow)
-	{
-	}
-	TitleAppearance(const FPlayerTitleData& data) { updateFromPlayerTitleData(data); }
+	TitleAppearance(const std::string &text, const FColor &textColor, const FColor &glowColor, bool sameTextAndGlow = true)
+	    : m_text(text), m_textColor(textColor), m_glowColor(glowColor), m_sameTextAndGlowColor(sameTextAndGlow) {}
+	TitleAppearance(const FPlayerTitleData &data) { updateFromPlayerTitleData(data); }
 
-	void                                  updateFromPlayerTitleData(const FPlayerTitleData& data);
-	static std::optional<TitleAppearance> fromEncodedStr(const std::string& str); // factory func
-	FPlayerTitleData                      toTitleData(const FName& id) const;
+	void                                  updateFromPlayerTitleData(const FPlayerTitleData &data);
+	static std::optional<TitleAppearance> fromEncodedStr(const std::string &str); // factory func
+	FPlayerTitleData                      toTitleData(const FName &id) const;
 
 	// Getters
 	std::string getText() const { return m_text; }
@@ -35,16 +32,16 @@ public:
 	ImVec4      getImGuiGlowColor() const;
 	int32_t     getIntTextColor() const;
 	int32_t     getIntGlowColor() const;
-	bool*       getUseRGBPtr() { return &m_useRGB; }
-	bool*       getSameTextAndGlowColorPtr() { return &m_sameTextAndGlowColor; }
+	bool       *getUseRGBPtr() { return &m_useRGB; }
+	bool       *getSameTextAndGlowColorPtr() { return &m_sameTextAndGlowColor; }
 	bool        usesRGB() const { return m_useRGB; }
 	bool        isSameTextAndGlowColor() const { return m_sameTextAndGlowColor; }
 
 	// Setters
-	void setText(const std::string& str) { m_text = str; }
-	void setTextColor(const FColor& newCol) { m_textColor = newCol; }
+	void setText(const std::string &str) { m_text = str; }
+	void setTextColor(const FColor &newCol) { m_textColor = newCol; }
 	void setTextColor(const float (&newCol)[4]) { m_textColor = Colors::toFColor(newCol); }
-	void setGlowColor(const FColor& newCol) { m_glowColor = newCol; }
+	void setGlowColor(const FColor &newCol) { m_glowColor = newCol; }
 	void setGlowColor(const float (&newCol)[4]) { m_glowColor = Colors::toFColor(newCol); }
 	void setSameTextAndGlowColor(bool val) { m_sameTextAndGlowColor = val; }
 	void setUseRGB(bool val) { m_useRGB = val; }
@@ -54,36 +51,34 @@ public:
 	std::string getDebugGlowColorStr() const;
 	std::string toEncodedString() const;
 	json        toJson() const;
-	void        fromJson(const json& j);
-	bool        operator==(const TitleAppearance& other) const;
+	void        fromJson(const json &j);
+	bool        operator==(const TitleAppearance &other) const;
 };
 
-struct GameTitleAppearance : TitleAppearance
-{
+struct GameTitleAppearance : TitleAppearance {
 	int32_t idFnameEntry = -1;
 
 	GameTitleAppearance() {}
-	GameTitleAppearance(int32_t id, const FPlayerTitleData& data) : TitleAppearance(data), idFnameEntry(id) {}
+	GameTitleAppearance(int32_t id, const FPlayerTitleData &data) : TitleAppearance(data), idFnameEntry(id) {}
 };
 
-class InGamePresetManager
-{
+class InGamePresetManager {
 public:
-	using PresetMap     = std::unordered_map<UGFxData_PRI_TA*, TitleAppearance>;
+	using PresetMap     = std::unordered_map<UGFxData_PRI_TA *, TitleAppearance>;
 	using Iterator      = PresetMap::iterator;
 	using ConstIterator = PresetMap::const_iterator;
 
-	void          addPreset(UGFxData_PRI_TA* player, const TitleAppearance& appearance);
-	void          removePreset(UGFxData_PRI_TA* player);
-	bool          contains(UGFxData_PRI_TA* player) const;
-	ConstIterator find(UGFxData_PRI_TA* player) const;
+	void          addPreset(UGFxData_PRI_TA *player, const TitleAppearance &appearance);
+	void          removePreset(UGFxData_PRI_TA *player);
+	bool          contains(UGFxData_PRI_TA *player) const;
+	ConstIterator find(UGFxData_PRI_TA *player) const;
 	ConstIterator end() const;
 	void          clear();
 	bool          rgbPresetsExist() const;
 
 	// Per-frame iteration over RGB presets
-	template <typename Func> void forEachRGBPreset(Func&& func)
-	{
+	template <typename Func>
+	void forEachRGBPreset(Func &&func) {
 		for (auto it : m_rgbPresets)
 			func(it->first, it->second);
 	}
@@ -96,14 +91,13 @@ private:
 	void removeFromRGBList(Iterator it);
 };
 
-class TitlesComponent : Component<TitlesComponent>
-{
+class TitlesComponent : Component<TitlesComponent> {
 public:
 	TitlesComponent() {}
 	~TitlesComponent() {}
 
 	static constexpr std::string_view componentName = "Titles";
-	void                              init(const std::shared_ptr<GameWrapper>& gw);
+	void                              init(const std::shared_ptr<GameWrapper> &gw);
 
 private:
 	void initHooks();
@@ -145,37 +139,37 @@ private:
 
 	void removeUserCustomTitle();
 
-	void refreshPriTitlePresets(AGFxHUD_TA* hud = nullptr);
-	void updateGameTitleAppearances(UTitleConfig_X* config = nullptr, bool forceSearch = false);
+	void refreshPriTitlePresets(AGFxHUD_TA *hud = nullptr);
+	void updateGameTitleAppearances(UTitleConfig_X *config = nullptr, bool forceSearch = false);
 
 	FName getCustomTitleId();
 
-	bool spawn(const std::string& spawn_id, bool animation = true, const std::string& spawn_msg = "");
-	bool spawn(const FName& spawn_id, bool animation = true, const std::string& spawn_msg = "");
-	bool spawn(const FString& spawn_id, bool animation = true, const std::string& spawn_msg = "");
+	bool spawn(const std::string &spawn_id, bool animation = true, const std::string &spawn_msg = "");
+	bool spawn(const FName &spawn_id, bool animation = true, const std::string &spawn_msg = "");
+	bool spawn(const FString &spawn_id, bool animation = true, const std::string &spawn_msg = "");
 
 	// static
-	static void applyPresetToBanner(const TitleAppearance& title, UGFxDataRow_X* gfxRow = nullptr, bool log = false);
-	static void applyPresetToPri(UGFxData_PRI_TA* pri, const TitleAppearance& title);
+	static void applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow = nullptr, bool log = false);
+	static void applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title);
 
-	static FPlayerTitleData& getTitleFromConfig(int index, UTitleConfig_X* config = nullptr);
-	static UTitleConfig_X*   getTitleConfig(bool forceSearch = false);
-	static AGFxHUD_TA*       getGFxHUD();
+	static FPlayerTitleData &getTitleFromConfig(int index, UTitleConfig_X *config = nullptr);
+	static UTitleConfig_X   *getTitleConfig(bool forceSearch = false);
+	static AGFxHUD_TA       *getGFxHUD();
 	// static UGFxData_PlayerTitles_TA* getGFxPlayerTitles();	// banner
-	static UGFxData_PRI_TA* getUserGFxPRI(); // in-game
-	static UGFxData_PRI_TA* getGFxPriFromChatData(APlayerReplicationInfo* priBase, AHUDBase_TA* hudBase);
+	static UGFxData_PRI_TA *getUserGFxPRI(); // in-game
+	static UGFxData_PRI_TA *getGFxPriFromChatData(APlayerReplicationInfo *priBase, AHUDBase_TA *hudBase);
 
-	static void sendTitleDataChat(const TitleAppearance& appearance, APlayerController* pc = nullptr);
+	static void sendTitleDataChat(const TitleAppearance &appearance, APlayerController *pc = nullptr);
 
 public:
 	static constexpr int DEFAULT_RGB_SPEED = 0;
 
 	void             handleUnload();
-	TitleAppearance* getActivePreset(bool log = true);
+	TitleAppearance *getActivePreset(bool log = true);
 
 	void spawnSelectedPreset(bool log = false);
 	void applySelectedAppearanceToUser(bool sendTitleSyncChat = false);
-	void applyPresetFromChatData(std::string data, const FChatMessage& msg, AHUDBase_TA* caller);
+	void applyPresetFromChatData(std::string data, const FChatMessage &msg, AHUDBase_TA *caller);
 
 	// testing
 	bool test1();

@@ -1,7 +1,7 @@
 #pragma once
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 1
-#define VERSION_PATCH 9
+#define VERSION_PATCH 10
 #define VERSION_BUILD 0
 
 #define VERSION_SUFFIX "" // can be "" if no suffix

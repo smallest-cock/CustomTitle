@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.10
+ - Added colored console logs
+ - Updated internal SDK to match latest version of RL (v2.64)
+
 ## v1.1.9
  - Added more hooks to (hopefully) fix bug where other players' custom title isn't displayed until a goal is scored 🤞
  - Added new command `customtitle_broadcast` to manually broadcast your custom title to others with the plugin

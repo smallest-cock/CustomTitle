@@ -1,7 +1,8 @@
 // Microsoft Visual C++ generated resource script.
 //
-#include "resource.h"
-#include "version.h"
+#include "Resource.hpp"
+#include "../Version.hpp"
+#include "../PluginConfig.hpp"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -28,7 +29,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 TEXTINCLUDE 
 BEGIN
-    "resource.h\0"
+    "Resource.hpp\0"
 END
 
 2 TEXTINCLUDE 
@@ -78,13 +79,13 @@ BEGIN
     BEGIN
         BLOCK "041404b0"
         BEGIN
-            VALUE "CompanyName", "Tesla"
-            VALUE "FileDescription", "BakkesMod plugin"
+            VALUE "CompanyName", COMPANY_NAME
+            VALUE "FileDescription", PLUGIN_NAME
             VALUE "FileVersion", stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD)
-            VALUE "InternalName", "CustomTitle.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2025"
-            VALUE "OriginalFilename", "CustomTitle.dll"
-            VALUE "ProductName", "Custom Title"
+            VALUE "InternalName", PLUGIN_NAME_NO_SPACES ".dll"
+            VALUE "LegalCopyright", "Copyright (C) 2026"
+            VALUE "OriginalFilename", PLUGIN_NAME_NO_SPACES ".dll"
+            VALUE "ProductName", PLUGIN_NAME
             VALUE "ProductVersion", stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD)
         END
     END
@@ -108,4 +109,3 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

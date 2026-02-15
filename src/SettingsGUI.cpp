@@ -2,12 +2,11 @@
 #include "Cvars.hpp"
 #include "ModUtils/gui/GuiTools.hpp"
 #include "CustomTitle.hpp"
-#include "Macros.hpp"
+#include "util/Macros.hpp"
 #include "components/Titles.hpp"
 #include "components/Textures.hpp"
 
-void CustomTitle::RenderSettings()
-{
+void CustomTitle::RenderSettings() {
 	const float contentHeight = ImGui::GetContentRegionAvail().y - FOOTER_HEIGHT; // available height after accounting for footer
 	{
 		GUI::ScopedChild c{"MainSettingsSection", ImVec2(0, contentHeight)};
@@ -38,14 +37,13 @@ void CustomTitle::RenderSettings()
 
 		GUI::Spacing(4);
 
-		static std::array<std::pair<std::string, const char*>, 3> s_bindableCmds = {{
+		static std::array<std::pair<std::string, const char *>, 3> s_bindableCmds = {{
 		    {("togglemenu " + GetMenuName()), "Toggle plugin menu"},
 		    {Commands::toggleEnabled.name, "Toggle your custom title on/off"},
 		    {Commands::spawnCustomTitle.name, "Spawn your custom title"},
 		}};
 
-		for (auto& [cmd, desc] : s_bindableCmds)
-		{
+		for (auto &[cmd, desc] : s_bindableCmds) {
 			GUI::ScopedID id{&cmd};
 
 			ImGui::SetNextItemWidth(200.0f);
@@ -60,30 +58,24 @@ void CustomTitle::RenderSettings()
 	GUI::alt_settings_footer("Need help? Join the Discord", "https://discord.gg/d5ahhQmJbJ");
 }
 
-void CustomTitle::RenderWindow()
-{
-	if (ImGui::BeginTabBar("##Tabs"))
-	{
-		if (ImGui::BeginTabItem("Presets"))
-		{
+void CustomTitle::RenderWindow() {
+	if (ImGui::BeginTabBar("##Tabs")) {
+		if (ImGui::BeginTabItem("Presets")) {
 			TitlePresets_Tab();
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Icons"))
-		{
+		if (ImGui::BeginTabItem("Icons")) {
 			TourneyIcons_Tab();
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Settings"))
-		{
+		if (ImGui::BeginTabItem("Settings")) {
 			Settings_Tab();
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Info"))
-		{
+		if (ImGui::BeginTabItem("Info")) {
 			Info_Tab();
 			ImGui::EndTabItem();
 		}
@@ -92,8 +84,7 @@ void CustomTitle::RenderWindow()
 	}
 }
 
-void CustomTitle::Settings_Tab()
-{
+void CustomTitle::Settings_Tab() {
 	auto showTitleToOthers_cvar        = getCvar(Cvars::showTitleToOthers);
 	auto showOtherPlayerTitles_cvar    = getCvar(Cvars::showOtherPlayerTitles);
 	auto filterOtherPlayerTitles_cvar  = getCvar(Cvars::filterOtherPlayerTitles);
@@ -160,8 +151,7 @@ void CustomTitle::Settings_Tab()
 		rgbSpeed_cvar.setValue(TitlesComponent::DEFAULT_RGB_SPEED);
 }
 
-void CustomTitle::TitlePresets_Tab()
-{
+void CustomTitle::TitlePresets_Tab() {
 	ImVec2 total_size = ImGui::GetContentRegionAvail();
 
 	{
@@ -179,15 +169,13 @@ void CustomTitle::TitlePresets_Tab()
 	}
 }
 
-void CustomTitle::TourneyIcons_Tab()
-{
+void CustomTitle::TourneyIcons_Tab() {
 	GUI::Spacing(2);
 
 	Textures.display_iconCustomizations();
 }
 
-void CustomTitle::Info_Tab()
-{
+void CustomTitle::Info_Tab() {
 	GUI::Spacing(2);
 
 	ImGui::TextColored(GUI::Colors::Yellow, "Important plugin info:");

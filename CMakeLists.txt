@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.0)
 
-project(CustomTitle VERSION 1.1.9)
+project(CustomTitle VERSION 1.1.10)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -27,10 +27,28 @@ set(compile_options
 )
 
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
-set(COMPONENTS_DIR "${SRC_DIR}/components")
+set(BMSDK_DIR "${EXTERNAL_DIR}/BMSDK")
 set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 
-set(BMSDK_DIR "${EXTERNAL_DIR}/BMSDK")
+set(BOILERPLATE_DIR "${SRC_DIR}/boilerplate")
+set(BOILERPLATE_SRC
+    ${BOILERPLATE_DIR}/GuiBase.cpp
+    ${BOILERPLATE_DIR}/PluginHelperBase.cpp
+    ${BOILERPLATE_DIR}/${PROJECT_NAME}.rc
+)
+
+set(COMPONENTS_DIR "${SRC_DIR}/components")
+set(COMPONENTS_SRC
+    ${COMPONENTS_DIR}/Textures.cpp
+    ${COMPONENTS_DIR}/Items.cpp
+    ${COMPONENTS_DIR}/Titles.cpp
+)
+
+set(UTIL_DIR "${SRC_DIR}/util")
+set(UTIL_SRC
+    ${UTIL_DIR}/Instances.cpp
+    ${UTIL_DIR}/HookManager.cpp
+)
 
 set(RLSDK_DIR "${EXTERNAL_DIR}/RLSDK/RLSDK_w_pch_includes")
 set(RLSDK_SRC
@@ -104,18 +122,14 @@ add_library(${PROJECT_NAME}
     ${RLSDK_SRC}
     ${MODUTILS_SRC}
     ${KIERO_SRC}
-    ${COMPONENTS_DIR}/Instances.cpp
-    ${COMPONENTS_DIR}/Textures.cpp
-    ${COMPONENTS_DIR}/Items.cpp
-    ${COMPONENTS_DIR}/Titles.cpp
+    ${UTIL_SRC}
+    ${BOILERPLATE_SRC}
+    ${COMPONENTS_SRC}
     ${SRC_DIR}/${PROJECT_NAME}.cpp
-    ${SRC_DIR}/HelperFuncs.cpp
     ${SRC_DIR}/SettingsGUI.cpp
-    ${SRC_DIR}/Events.cpp
+    ${SRC_DIR}/Hooks.cpp
     ${SRC_DIR}/Commands.cpp
-    ${SRC_DIR}/GuiBase.cpp
     ${SRC_DIR}/pch.cpp
-    ${SRC_DIR}/${PROJECT_NAME}.rc
 )
 
 target_precompile_headers(${PROJECT_NAME}
