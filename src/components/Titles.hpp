@@ -4,6 +4,12 @@
 #include <optional>
 #include <string_view>
 
+struct FNameCache {
+	FNameMemo none;
+};
+
+extern FNameCache g_fnameCache;
+
 class TitleAppearance {
 	std::string m_text                 = "{legend} {grandchampion} example {gold} {champion}";
 	FColor      m_textColor            = {255, 255, 255, 255};
@@ -105,11 +111,6 @@ private:
 	void initCvars();
 
 private:
-	static constexpr int MAX_TEXT_LENGTH = 64; // max characters that'll show up in UI, excluding {brace} symbols
-
-	fs::path m_pluginFolder;
-	fs::path m_titlePresetsJson;
-
 	// cvar values
 	std::shared_ptr<bool> m_enabled                       = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_showOtherPlayerTitles         = std::make_shared<bool>(true);
@@ -120,6 +121,12 @@ private:
 	std::shared_ptr<bool> m_showEquippedTitleDetails      = std::make_shared<bool>(false);
 	std::shared_ptr<int>  m_rgbSpeed                      = std::make_shared<int>(0);
 
+private:
+	static constexpr int MAX_TEXT_LENGTH = 64; // max characters that'll show up in UI, excluding {brace} symbols
+
+	fs::path m_pluginFolder;
+	fs::path m_titlePresetsJson;
+
 	int                              m_activePresetIndex = 0;
 	TitleAppearance                  m_currentOgAppearance;
 	std::vector<TitleAppearance>     m_titlePresets;
@@ -127,7 +134,8 @@ private:
 	InGamePresetManager              m_ingamePresets;
 
 	bool        m_shouldOverwriteGetTitleDataReturnVal = false; // what a name
-	std::string m_selectedTitleId;
+	std::string m_selectedTitleIdStr;
+	FName       m_selectedTitleId;
 
 private:
 	void            addNewPreset();
@@ -150,7 +158,7 @@ private:
 
 	// static
 	static void applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow = nullptr, bool log = false);
-	static void applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title);
+	static void applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title, bool log = false);
 
 	static FPlayerTitleData &getTitleFromConfig(int index, UTitleConfig_X *config = nullptr);
 	static UTitleConfig_X   *getTitleConfig(bool forceSearch = false);
@@ -168,7 +176,7 @@ public:
 	TitleAppearance *getActivePreset(bool log = true);
 
 	void spawnSelectedPreset(bool log = false);
-	void applySelectedAppearanceToUser(bool sendTitleSyncChat = false);
+	void applySelectedAppearanceToUser(bool sendTitleSyncChat = false, bool log = false);
 	void applyPresetFromChatData(std::string data, const FChatMessage &msg, AHUDBase_TA *caller);
 
 	// testing

@@ -5,10 +5,13 @@
 #include <ModUtils/gui/GuiTools.hpp>
 #include <ModUtils/wrappers/GFxWrapper.hpp>
 #include "Items.hpp"
-#include "util/Instances.hpp"
-#include "util/Macros.hpp"
+#include "PluginConfig.hpp"
 #include "Events.hpp"
-// #include "HookManager.hpp"
+#include "util/Instances.hpp"
+#include "util/Logging.hpp"
+#include "util/Macros.hpp"
+
+FNameCache g_fnameCache{};
 
 // ##############################################################################################################
 // ################################################    INIT    ##################################################
@@ -26,7 +29,7 @@ void TitlesComponent::init(const std::shared_ptr<GameWrapper> &gw) {
 }
 
 void TitlesComponent::setFilePaths() {
-	m_pluginFolder     = gameWrapper->GetDataFolder() / "CustomTitle";
+	m_pluginFolder     = gameWrapper->GetDataFolder() / PLUGIN_NAME_NO_SPACES;
 	m_titlePresetsJson = m_pluginFolder / "title_presets.json";
 
 	if (!fs::exists(m_titlePresetsJson)) {
@@ -45,6 +48,11 @@ void TitlesComponent::setFilePaths() {
 }
 
 void TitlesComponent::initHooks() {
+	hookEventPost(Events::GFxHUD_TA_OpenScoreboard, [this](...) {
+		LOG("Applying custom title after scoreboard opened...");
+		applySelectedAppearanceToUser();
+	});
+
 	hookWithCallerPost(Events::HUDBase_TA_DrawHUD, [this](ActorWrapper Caller, ...) {
 		TitleAppearance *preset            = getActivePreset(false);
 		bool             bannerHasRGB      = preset && preset->usesRGB();
@@ -108,10 +116,11 @@ void TitlesComponent::initHooks() {
 		if (!params)
 			return;
 
-		m_selectedTitleId = params->Title.ToString();
-		LOG("Updated m_selectedTitleId: \"{}\"", m_selectedTitleId);
+		m_selectedTitleId    = params->Title;
+		m_selectedTitleIdStr = params->Title.ToString();
+		LOG("Updated m_selectedTitleId: \"{}\"", m_selectedTitleIdStr);
 
-		if (m_selectedTitleId != "None") {
+		if (m_selectedTitleId != g_fnameCache.none.get(L"None")) {
 			// update stored OG appearance for current title
 			int32_t idFnameIdx = params->Title.GetDisplayIndex();
 			for (const auto &title : m_gameTitles) {
@@ -171,14 +180,14 @@ void TitlesComponent::initHooks() {
 		LOG("(debug) GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
 		*/
 
-		if (params->TitleId.ToString() != m_selectedTitleId)
+		if (params->TitleId != m_selectedTitleId)
 			return;
 
 		TitleAppearance *preset = getActivePreset();
 		if (!preset)
 			return;
 
-		if (m_selectedTitleId == "None")
+		if (m_selectedTitleId == g_fnameCache.none.get(L"None"))
 			DELAY(
 			    0.1f,
 			    {
@@ -285,6 +294,8 @@ void TitlesComponent::initHooks() {
 
 		sendTitleDataChat(*preset, caller);
 	});
+
+	LOGWARNING("Inited hooks");
 }
 
 void TitlesComponent::initCvars() {
@@ -370,7 +381,7 @@ void TitlesComponent::removeUserCustomTitle() {
 		LOG("Restored OG banner appearance");
 	}
 
-	if (m_selectedTitleId.empty())
+	if (m_selectedTitleId.GetDisplayIndex() == -1)
 		return;
 	applyPresetToBanner(m_currentOgAppearance);
 }
@@ -398,7 +409,7 @@ void TitlesComponent::handleUnload() {
 		LOG("(unload) Restored OG banner appearance");
 	}
 
-	if (m_selectedTitleId.empty())
+	if (m_selectedTitleId.GetDisplayIndex() == -1)
 		return;
 	applyPresetToBanner(m_currentOgAppearance);
 }
@@ -414,7 +425,7 @@ void TitlesComponent::updateGameTitleAppearances(UTitleConfig_X *config, bool fo
 
 	LOG("UTitleConfig_X has {} titles", config->Titles.size());
 	for (const FPlayerTitleData &titleData : config->Titles) {
-		if (titleData.Id == L"None" || titleData.Text.empty())
+		if (titleData.Id == g_fnameCache.none.get(L"None") || titleData.Text.empty())
 			continue;
 
 		m_gameTitles.emplace_back(titleData.Id.GetDisplayIndex(), titleData);
@@ -479,7 +490,7 @@ TitleAppearance *TitlesComponent::getActivePreset(bool log) {
 	return &m_titlePresets[m_activePresetIndex];
 }
 
-void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat) {
+void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat, bool log) {
 	TitleAppearance *title = getActivePreset();
 	if (!title)
 		return;
@@ -494,7 +505,7 @@ void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat) {
 
 	m_ingamePresets.addPreset(pri, *title);
 	if (!title->usesRGB())
-		applyPresetToPri(pri, *title);
+		applyPresetToPri(pri, *title, log);
 
 	// send title sync chat
 	if (sendTitleSyncChat)
@@ -502,7 +513,7 @@ void TitlesComponent::applySelectedAppearanceToUser(bool sendTitleSyncChat) {
 }
 
 void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessage &msg, AHUDBase_TA *caller) {
-#define DONT_APPLY_TO_USER
+	// #define DONT_APPLY_TO_USER
 
 	if (!validUObject(caller) || !caller->IsA<AGFxHUD_TA>())
 		return;
@@ -533,7 +544,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 
 	auto appearanceOpt = TitleAppearance::fromEncodedStr(data);
 	if (!appearanceOpt) {
-		LOGERROR("Unable to parse title appearance from string: \"{}\"", Format::EscapeBraces(data));
+		LOGERROR("Unable to parse title appearance from string: \"{}\"", data);
 		return;
 	}
 	TitleAppearance appearance = *appearanceOpt;
@@ -561,10 +572,7 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 				    if (!gfxPri)
 					    return;
 
-				    LOG("Censored title text for {}: \"{}\" ---> \"{}\"",
-				        senderName,
-				        Format::EscapeBraces(oldText),
-				        Format::EscapeBraces(title.getText()));
+				    LOG("Censored title text for {}: \"{}\" ---> \"{}\"", senderName, oldText, title.getText());
 
 				    m_ingamePresets.addPreset(gfxPri, title);
 				    refreshPriTitlePresets(hud);
@@ -661,7 +669,7 @@ FName TitlesComponent::getCustomTitleId() {
 	FName name{id};
 
 	// if the FName we've added to the config is still there, use that
-	if (name != L"None" && config->GetTitleData(name).Id == name)
+	if (name != g_fnameCache.none.get(L"None") && config->GetTitleData(name).Id == name)
 		return name;
 	// otherwise find an FName that doesn't alr exist in the config (aka dont use one for an existing title)
 	// and use that (which will eventually get added to the config.. and should trigger the above condition next time this func is called)
@@ -867,17 +875,17 @@ UGFxData_PRI_TA *TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo *
 	return gfxPri;
 }
 
-void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title) {
+void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title, bool log) {
 	if (!validUObject(pri))
 		return;
 
 	GfxWrapper gfxPri{pri};
-
 	gfxPri.set_string(L"XPTitle", title.getTextFStr());
 	gfxPri.set_int(L"TitleColor", title.getIntTextColor());
 	gfxPri.set_int(L"TitleGlowColor", title.getIntGlowColor());
 
-	LOG("Applied title preset for {}... (UGFxData_PRI_TA: {})", pri->PlayerName.ToString(), Format::ToHexString(pri));
+	if (log)
+		LOG("Applied title preset for {} ... (UGFxData_PRI_TA: {})", pri->PlayerName, pri);
 }
 
 void TitlesComponent::applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow, bool log) {
@@ -978,16 +986,16 @@ void TitlesComponent::display_titlePresetInfo() {
 	{
 		GUI::ScopedChild c{"PrestInfo", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.8f)};
 
-		if (!m_selectedTitleId.empty()) {
+		if (!m_selectedTitleIdStr.empty()) {
 			if (*m_showEquippedTitleDetails) {
 				if (ImGui::CollapsingHeader("Equipped title info")) {
 					static constexpr float spacing = 75.0f;
 
 					ImGui::TextColored(GUI::Colors::LightGreen, "ID:");
 					GUI::SameLineSpacing_absolute(spacing);
-					ImGui::Text("%s", m_selectedTitleId.c_str());
+					ImGui::Text("%s", m_selectedTitleIdStr.c_str());
 
-					if (m_selectedTitleId != "None") {
+					if (m_selectedTitleIdStr != "None") {
 						ImGui::TextColored(GUI::Colors::LightGreen, "Text:");
 						GUI::SameLineSpacing_absolute(spacing);
 						ImGui::Text("%s", m_currentOgAppearance.getText().c_str());
@@ -1016,7 +1024,7 @@ void TitlesComponent::display_titlePresetInfo() {
 			} else {
 				ImGui::TextColored(GUI::Colors::LightGreen, "Equipped title: ");
 				ImGui::SameLine();
-				ImGui::Text("%s", m_selectedTitleId.c_str());
+				ImGui::Text("%s", m_selectedTitleIdStr.c_str());
 				GUI::ToolTip("The ID of your real title\n\n(aka what's beneath the custom appearance)");
 			}
 
@@ -1278,7 +1286,7 @@ std::optional<TitleAppearance> TitleAppearance::fromEncodedStr(const std::string
 	if (parts.size() == 4)
 		appearance.setUseRGB(parts[3] == "1");
 	else
-		LOG("WARNING: Looks like someone is using an old version of the mod that doesn't support RGB (pre v1.1.0)");
+		LOGWARNING("Looks like someone is using an old version of the mod that doesn't support RGB (pre v1.1.0)");
 
 	return appearance;
 }
@@ -1287,7 +1295,7 @@ FPlayerTitleData TitleAppearance::toTitleData(const FName &id) const {
 	FPlayerTitleData data{};
 	data.Text      = getTextFStr();
 	data.Id        = id;
-	data.Category  = L"None";
+	data.Category  = g_fnameCache.none.get(L"None");
 	data.Color     = getTextFColor();
 	data.GlowColor = getGlowFColor();
 	return data;
