@@ -53,6 +53,8 @@ void TitlesComponent::initHooks() {
 		applySelectedAppearanceToUser();
 	});
 
+	// this hook only applies RGB titles (bc they require updating every frame)
+	// ...non-RGB presets have to rely on other hooks
 	hookWithCallerPost(Events::HUDBase_TA_DrawHUD, [this](ActorWrapper Caller, ...) {
 		TitleAppearance *preset            = getActivePreset(false);
 		bool             bannerHasRGB      = preset && preset->usesRGB();
@@ -63,7 +65,7 @@ void TitlesComponent::initHooks() {
 
 		tickRGB();
 
-		// update RGB preset on banner
+		// banner
 		if (*m_enabled && bannerHasRGB) {
 			auto *caller = reinterpret_cast<AHUDBase_TA *>(Caller.memory_address);
 			if (!validUObject(caller))
@@ -71,7 +73,7 @@ void TitlesComponent::initHooks() {
 			applyPresetToBanner(*preset, caller->Shell);
 		}
 
-		// update RGB presets in-game
+		// in-game
 		if (gameHasRGBPresets) {
 			auto    userId   = Instances.GetUniqueID();
 			int32_t rgbColor = GRainbowColor::GetDecimal();
