@@ -17,9 +17,12 @@ namespace Cvars {
 	constexpr auto applyOthersTitleNotif    = CVAR("apply_others_title_notification", "show noti when applying another player's title");
 	constexpr auto useHueColorPicker        = CVAR("use_hue_color_picker", "use HSV hue color wheel triangle illuminati thing");
 	constexpr auto showEquippedTitleDetails = CVAR("show_equipped_title_details", "show extra details about the equipped title");
+	constexpr auto applyUserPresetFromChat  = CVAR(
+        "apply_user_preset_from_chat", "Applies user's own preset after sending a title broadcast chat");
 
 	// numbers
-	constexpr auto rgbSpeed = CVAR("rgb_speed", "RGB color cycle speed");
+	constexpr auto rgbSpeed             = CVAR("rgb_speed", "RGB color cycle speed");
+	constexpr auto broadcastChatTimeout = CVAR("broadcast_chat_timeout", "The cooldown duration between title broadcast chats");
 }
 
 namespace Commands {

@@ -4,6 +4,7 @@
 #include <ModUtils/util/Utils.hpp>
 #include <ModUtils/gui/GuiTools.hpp>
 #include <ModUtils/wrappers/GFxWrapper.hpp>
+#include <chrono>
 #include "Items.hpp"
 #include "PluginConfig.hpp"
 #include "Events.hpp"
@@ -208,36 +209,6 @@ void TitlesComponent::initHooks() {
 		}
 	});
 
-	/*
-	hookWithCallerPost(Events::PlayerTitleConfig_X_GetTitleData,
-	    [this](ActorWrapper Caller, void* Params, ...)
-	    {
-	        return;
-
-	        auto* caller = reinterpret_cast<UTitleConfig_X*>(Caller.memory_address);
-	        if (!caller)
-	            return;
-
-	        auto* params = reinterpret_cast<UTitleConfig_X_execGetTitleData_Params*>(Params);
-	        if (!params)
-	            return;
-
-	        //// debug
-	        // std::string titleId = params->TitleId.ToString();
-	        // LOG("PlayerTitleConfig_X.GetTitleData(\"{}\") was called", titleId);
-
-	        std::string titleId = params->TitleId.ToString();
-	        if (titleId != m_selectedTitleId)
-	            return;
-
-	        TitleAppearance* preset = getActivePreset();
-	        if (!preset)
-	            return;
-	        params->ReturnValue = preset->toTitleData(params->TitleId);
-	        LOG("Set custom FPlayerTitleData return value for \"{}\"", titleId);
-	    });
-	*/
-
 	hookEventPost(Events::GFxData_StartMenu_TA_ProgressToMainMenu, [this](...) {
 		if (!*m_enabled)
 			return;
@@ -319,8 +290,10 @@ void TitlesComponent::initCvars() {
 	registerCvar_bool(Cvars::useHueColorPicker, true).bindTo(m_useHueColorPicker);
 	registerCvar_bool(Cvars::applyOthersTitleNotif, false).bindTo(m_notifyWhenApplyingOthersTitle);
 	registerCvar_bool(Cvars::showEquippedTitleDetails, false).bindTo(m_showEquippedTitleDetails);
+	registerCvar_bool(Cvars::applyUserPresetFromChat, false).bindTo(m_applyUserPresetFromChat);
 
 	registerCvar_number(Cvars::rgbSpeed, 0, true, -14, 9).bindTo(m_rgbSpeed);
+	registerCvar_number(Cvars::broadcastChatTimeout, 1, true, 0, 5).bindTo(m_broadcastChatTimeout);
 
 	// commands
 	registerCommand(Commands::toggleEnabled, [this](...) {
@@ -331,8 +304,21 @@ void TitlesComponent::initCvars() {
 	});
 
 	registerCommand(Commands::broadcast, [this](...) {
+		static std::chrono::steady_clock::time_point lastBroadcastTime;
+
 		if (!*m_enabled || !*m_showTitleToOthers)
 			return;
+
+		auto now                    = std::chrono::steady_clock::now();
+		auto timeSinceLastBroadcast = now - lastBroadcastTime;
+		auto timeoutDuration        = std::chrono::duration<float>(*m_broadcastChatTimeout);
+		if (timeSinceLastBroadcast < timeoutDuration) {
+			LOGWARNING("Skipping title broadcast chat. (Last chat was sent {} seconds ago. Cooldown is {} seconds)",
+			    std::chrono::duration<double>(timeSinceLastBroadcast).count(),
+			    timeoutDuration.count());
+			return;
+		}
+
 		if (gameWrapper->IsInFreeplay() || gameWrapper->IsInReplay())
 			return;
 
@@ -342,6 +328,8 @@ void TitlesComponent::initCvars() {
 		TitleAppearance *preset = getActivePreset();
 		if (!preset)
 			return;
+
+		lastBroadcastTime = now;
 		sendTitleDataChat(*preset, pc);
 	});
 

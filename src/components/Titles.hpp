@@ -119,7 +119,10 @@ private:
 	std::shared_ptr<bool> m_useHueColorPicker             = std::make_shared<bool>(true);
 	std::shared_ptr<bool> m_notifyWhenApplyingOthersTitle = std::make_shared<bool>(false);
 	std::shared_ptr<bool> m_showEquippedTitleDetails      = std::make_shared<bool>(false);
-	std::shared_ptr<int>  m_rgbSpeed                      = std::make_shared<int>(0);
+	std::shared_ptr<bool> m_applyUserPresetFromChat       = std::make_shared<bool>(true);
+
+	std::shared_ptr<int>   m_rgbSpeed             = std::make_shared<int>(0);
+	std::shared_ptr<float> m_broadcastChatTimeout = std::make_shared<float>(1);
 
 private:
 	static constexpr int MAX_TEXT_LENGTH = 64; // max characters that'll show up in UI, excluding {brace} symbols

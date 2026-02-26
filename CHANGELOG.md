@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.10-hotfix
+ - Rate limited title broadcast chats to reduce chat timeouts 
+
 ## v1.1.10
  - Fixed bug causing user's custom title not to show in game if it's non-RGB (maybe)
  - Added colored console logs

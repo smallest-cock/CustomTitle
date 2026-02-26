@@ -91,7 +91,9 @@ void CustomTitle::Settings_Tab() {
 	auto applyOthersTitleNotif_cvar    = getCvar(Cvars::applyOthersTitleNotif);
 	auto useHueColorPicker_cvar        = getCvar(Cvars::useHueColorPicker);
 	auto showEquippedTitleDetails_cvar = getCvar(Cvars::showEquippedTitleDetails);
+	auto applyUserPresetFromChat_cvar  = getCvar(Cvars::applyUserPresetFromChat);
 	auto rgbSpeed_cvar                 = getCvar(Cvars::rgbSpeed);
+	auto broadcastChatTimeout_cvar     = getCvar(Cvars::broadcastChatTimeout);
 	if (!showTitleToOthers_cvar)
 		return;
 
@@ -129,6 +131,10 @@ void CustomTitle::Settings_Tab() {
 	if (ImGui::Checkbox("Show extra info about equipped title in Presets tab", &showEquippedTitleDetails))
 		showEquippedTitleDetails_cvar.setValue(showEquippedTitleDetails);
 
+	bool applyUserPresetFromChat = applyOthersTitleNotif_cvar.getBoolValue();
+	if (ImGui::Checkbox("Apply your own custom title after sending broadcast chat", &showEquippedTitleDetails))
+		showEquippedTitleDetails_cvar.setValue(showEquippedTitleDetails);
+
 	GUI::Spacing(4);
 
 	// determine slider text
@@ -149,6 +155,11 @@ void CustomTitle::Settings_Tab() {
 
 	if (ImGui::Button("Reset##rgbSpeed"))
 		rgbSpeed_cvar.setValue(TitlesComponent::DEFAULT_RGB_SPEED);
+
+	float broadcastChatTimeout = broadcastChatTimeout_cvar.getFloatValue();
+	if (ImGui::SliderFloat("Title broadcast cooldown", &broadcastChatTimeout, 0, 5, "%.2f seconds"))
+		broadcastChatTimeout_cvar.setValue(broadcastChatTimeout);
+	GUI::ToolTip("The minimum amount time to wait (in seconds) between sending title broadcast chats.\nHelps reduce random chat timeouts.");
 }
 
 void CustomTitle::TitlePresets_Tab() {
