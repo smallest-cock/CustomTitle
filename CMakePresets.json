@@ -7,16 +7,16 @@
     },
     "configurePresets": [
         {
-            "name": "default",
+            "name": "ninja-base",
             "description": "Sets generator and source directory",
             "hidden": true,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build"
         },
         {
-            "name": "windows-x64-msvc",
+            "name": "ninja-release",
             "displayName": "Windows (x64): Ninja + cl.exe",
-            "inherits": "default",
+            "inherits": "ninja-base",
             "description": "Sets x64 architecture, compiler/linker, and build type",
             "architecture": {
                 "value": "x64",
@@ -40,8 +40,8 @@
     ],
     "buildPresets": [
         {
-            "name": "default",
-            "configurePreset": "windows-x64-msvc"
+            "name": "Ninja-Release",
+            "configurePreset": "ninja-release"
         }
     ]
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.11
+ - Updated internal SDK to match latest RL version (v2.66)
+
 ## v1.1.10-hotfix
  - Rate limited title broadcast chats to reduce chat timeouts 
 
