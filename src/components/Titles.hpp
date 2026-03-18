@@ -192,6 +192,7 @@ public:
 	void display_titlePresetInfo();
 	void display_gameTitlesDropdown();
 	void display_enabledCheckbox();
+	void display_testTab();
 };
 
 extern class TitlesComponent Titles;

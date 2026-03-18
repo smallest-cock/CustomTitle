@@ -5,6 +5,7 @@
 #include <ModUtils/gui/GuiTools.hpp>
 #include <ModUtils/wrappers/GFxWrapper.hpp>
 #include <chrono>
+#include <optional>
 #include "Items.hpp"
 #include "PluginConfig.hpp"
 #include "Events.hpp"
@@ -1214,6 +1215,10 @@ void TitlesComponent::display_enabledCheckbox() {
 		enabled_cvar.setValue(enabled);
 }
 
+void TitlesComponent::display_testTab() {
+	// ...
+}
+
 // ##############################################################################################################
 // #############################################    TESTING    ##################################################
 // ##############################################################################################################
@@ -1257,19 +1262,36 @@ void TitleAppearance::updateFromPlayerTitleData(const FPlayerTitleData &data) {
 }
 
 std::optional<TitleAppearance> TitleAppearance::fromEncodedStr(const std::string &str) {
+	static auto crashPreventedNotification = [&](std::string &&type, const std::string &str) {
+		Instances.spawnNotification(
+		    "Custom Title", std::format("Prevented crash while parsing hex string ({} color): \"{}\"", type, str), 3, true);
+		Instances.spawnNotification("Custom Title", "Someone in the lobby tried to crash your game...", 7, true);
+	};
+
 	auto parts = Format::SplitStr(str, '|');
 	if (parts.size() != 3 && parts.size() != 4)
 		return std::nullopt; // invalid format
 
 	TitleAppearance appearance;
 	appearance.setText(parts[0]);
-	appearance.setTextColor(Colors::hexToFColor(parts[1]));
+	auto textColorOpt = Colors::hexToFColor(parts[1]);
+	if (!textColorOpt) {
+		crashPreventedNotification("text", parts[1]);
+		return std::nullopt;
+	}
+
+	appearance.setTextColor(*textColorOpt);
 
 	if (parts[2] == "-") {
 		appearance.setGlowColor(appearance.getTextFColor());
 		appearance.setSameTextAndGlowColor(true);
 	} else {
-		appearance.setGlowColor(Colors::hexToFColor(parts[2]));
+		auto glowColorOpt = Colors::hexToFColor(parts[2]);
+		if (!glowColorOpt) {
+			crashPreventedNotification("glow", parts[2]);
+			return std::nullopt;
+		}
+		appearance.setGlowColor(*glowColorOpt);
 		appearance.setSameTextAndGlowColor(false);
 	}
 

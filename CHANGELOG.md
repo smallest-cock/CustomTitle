@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.12
+ - Fixed an exploit that was being abused to crash plugin users in the same lobby
+
 ## v1.1.11
  - Updated internal SDK to match latest RL version (v2.66)
 
