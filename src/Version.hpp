@@ -4,7 +4,7 @@
 #define VERSION_PATCH 13
 #define VERSION_BUILD 0
 
-#define VERSION_SUFFIX "hotfix" // can be "" if no suffix
+#define VERSION_SUFFIX "-hotfix" // can be "" if no suffix
 
 #define stringify(a) stringify_(a)
 #define stringify_(a) #a
