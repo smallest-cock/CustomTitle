@@ -822,9 +822,20 @@ UGFxData_PRI_TA *TitlesComponent::getUserGFxPRI() {
 		return nullptr;
 	}
 
-	int idx = gfxHud->GetPRIDataIndex(gfxHud->OwnerPRI); // or use any other player's PRI here (like... maybe from a chat message ;D)
-	if (idx >= gfxHud->PRIData.size())
+	auto   &ownerGfxPri = gfxHud->OwnerPRI;
+	int32_t idx         = gfxHud->GetPRIDataIndex(ownerGfxPri); // or use any other player's PRI here (like... maybe from a chat message ;D)
+	if (idx < 0) {
+		LOGWARNING("UGFxData_PRI_TA index for {} is {} (probably a spectator). Skipping title customization...",
+		    ownerGfxPri->PlayerName.ToString(),
+		    idx);
 		return nullptr;
+	} else if (idx >= gfxHud->PRIData.size()) {
+		LOGERROR("UGFxData_PRI_TA index for {} is {} (out of bounds). hud->PRIData TArray has only {} elements",
+		    ownerGfxPri->PlayerName.ToString(),
+		    idx,
+		    gfxHud->PRIData.size());
+		return nullptr;
+	}
 
 	auto *userGfxPri = gfxHud->PRIData.at(idx);
 	if (!validUObject(userGfxPri))
@@ -853,13 +864,21 @@ UGFxData_PRI_TA *TitlesComponent::getGFxPriFromChatData(APlayerReplicationInfo *
 	auto *pri = static_cast<APRI_TA *>(priBase);
 	auto *hud = static_cast<AGFxHUD_TA *>(hudBase);
 
-	auto gfxPriIndex = hud->GetPRIDataIndex(pri);
-	if (gfxPriIndex >= hud->PRIData.size()) {
-		LOGERROR("PRIData index is out of bounds");
+	int32_t gfxPriIndex = hud->GetPRIDataIndex(pri);
+	if (gfxPriIndex < 0) {
+		LOGWARNING("UGFxData_PRI_TA index for {} is {} (probably a spectator). Skipping title customization...",
+		    pri->PlayerName.ToString(),
+		    gfxPriIndex);
+		return nullptr;
+	} else if (gfxPriIndex >= hud->PRIData.size()) {
+		LOGERROR("UGFxData_PRI_TA index for {} is {} (out of bounds). hud->PRIData TArray has only {} elements",
+		    pri->PlayerName.ToString(),
+		    gfxPriIndex,
+		    hud->PRIData.size());
 		return nullptr;
 	}
 
-	auto *gfxPri = hud->PRIData.at(gfxPriIndex);
+	auto *gfxPri = hud->PRIData.at(gfxPriIndex); // <-- crashes here "invalid pointer read"
 	if (!validUObject(gfxPri))
 		return nullptr;
 

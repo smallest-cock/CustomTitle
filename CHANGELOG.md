@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.13-hotfix
+ - Fixed a bug that caused crashes when spectating
+
 ## v1.1.13
  - Fixed a bug causing titles to appear white in some cases
  - Fixed a bug in the settings tab where a certain checkbox toggled the wrong setting
