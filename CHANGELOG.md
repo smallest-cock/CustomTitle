@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.13
+ - Fixed a bug causing titles to appear white in some cases
+ - Fixed a bug in the settings tab where a certain checkbox toggled the wrong setting
+
 ## v1.1.12
  - Fixed an exploit that was being abused to crash plugin users in the same lobby
 

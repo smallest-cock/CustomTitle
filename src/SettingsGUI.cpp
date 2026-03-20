@@ -136,9 +136,10 @@ void CustomTitle::Settings_Tab() {
 	if (ImGui::Checkbox("Show extra info about equipped title in Presets tab", &showEquippedTitleDetails))
 		showEquippedTitleDetails_cvar.setValue(showEquippedTitleDetails);
 
-	bool applyUserPresetFromChat = applyOthersTitleNotif_cvar.getBoolValue();
-	if (ImGui::Checkbox("Apply your own custom title after sending broadcast chat", &showEquippedTitleDetails))
-		showEquippedTitleDetails_cvar.setValue(showEquippedTitleDetails);
+	bool applyUserPresetFromChat = applyUserPresetFromChat_cvar.getBoolValue();
+	if (ImGui::Checkbox("Apply your own custom title after broadcasting it", &applyUserPresetFromChat))
+		applyUserPresetFromChat_cvar.setValue(applyUserPresetFromChat);
+	GUI::ToolTip("This is just an \"overkill\" option for people who experience issues with their title showing up");
 
 	GUI::Spacing(4);
 
