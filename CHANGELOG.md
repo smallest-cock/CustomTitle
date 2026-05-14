@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.14
+ - Updated internal SDK to match latest RL version (v2.69)
+
 ## v1.1.13-hotfix
  - Fixed a bug that caused crashes when spectating
 
