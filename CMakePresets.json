@@ -1,8 +1,8 @@
 {
-    "version": 10,
+    "version": 9,
     "cmakeMinimumRequired": {
-        "major": 4,
-        "minor": 0,
+        "major": 3,
+        "minor": 21,
         "patch": 0
     },
     "configurePresets": [
@@ -11,30 +11,40 @@
             "description": "Sets generator and source directory",
             "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build"
+            "binaryDir": "${sourceDir}/build",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_LINKER": "link",
+                "CMAKE_RC_COMPILER": "rc",
+                "CMAKE_CXX_FLAGS": "/std:c++20 /EHsc /MP /Zi /O2",
+                "CMAKE_SYSTEM_NAME": "Windows"
+            }
         },
         {
             "name": "ninja-release",
             "displayName": "Windows (x64): Ninja + cl.exe",
             "inherits": "ninja-base",
             "description": "Sets x64 architecture, compiler/linker, and build type",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "CMAKE_CXX_COMPILER": "cl",
-                "CMAKE_LINKER": "link",
-                "CMAKE_RC_COMPILER": "rc",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
                 "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed",
                 "VCPKG_TARGET_TRIPLET": "x64-windows-static"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "ninja-release-linux",
+            "displayName": "Linux: Cross compile for Windows using msvc-wine",
+            "inherits": "ninja-release",
+            "description": "For cross compiling on Linux using msvc-wine",
+            "cacheVariables": {
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/triplets",
+                "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
             }
         }
     ],
