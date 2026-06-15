@@ -1,6 +1,6 @@
 #pragma once
-#include "RLSDK/RLSDK_w_pch_includes/SDK_HEADERS/Core_structs.hpp"
-#include "RLSDK/RLSDK_w_pch_includes/SDK_HEADERS/Core_classes.hpp"
+#include "RLSDK/RLSDK/SDK_HEADERS/Core_structs.hpp"
+#include "RLSDK/RLSDK/SDK_HEADERS/Core_classes.hpp"
 
 template <>
 struct std::formatter<FString> {

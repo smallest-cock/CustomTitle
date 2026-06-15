@@ -4,7 +4,7 @@
 #include "util/Instances.hpp"
 #include "components/Titles.hpp"
 #include "components/Textures.hpp"
-#include "Version.hpp"
+#include "version.hpp"
 
 BAKKESMOD_PLUGIN(CustomTitle, "Custom Title", plugin_version, PLUGINTYPE_FREEPLAY)
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;

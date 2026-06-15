@@ -2,7 +2,7 @@
 #include "boilerplate/GuiBase.hpp"
 #include "boilerplate/PluginHelperBase.hpp"
 #include "bakkesmod/plugin/bakkesmodplugin.h"
-#include "Version.hpp"
+#include "version.hpp"
 #include <minwindef.h>
 
 constexpr auto plugin_version = stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(

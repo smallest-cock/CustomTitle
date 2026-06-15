@@ -35,18 +35,18 @@ constexpr auto MODULE_NAME = L"RocketLeague.exe";
 HMODULE        rlModule    = GetModuleHandle(MODULE_NAME);
 
 uintptr_t InstancesComponent::findGNamesAddress() {
-	constexpr auto sig       = "?? ?? ?? ?? ?? ?? 00 00 ?? ?? 01 00 35 25 02 00";
-	uintptr_t      foundAddr = Memory::findPattern(rlModule, sig);
+	constexpr auto NEW_GNAMES_SIG = "49 63 4E 08 48 8B 05 ?? ?? ?? ?? 4C 89 34 C8 EB 08";
+	uintptr_t      foundAddr      = Memory::findPattern(rlModule, NEW_GNAMES_SIG);
 	if (!foundAddr) {
 		LOGERROR("GNames wasn't found! Returning 0...");
 		return 0;
 	}
-	return foundAddr;
+	return Memory::getRipRelativeAddr(foundAddr, 7);
 }
 
 uintptr_t InstancesComponent::findGMallocAddress() {
-	constexpr auto sig       = "48 89 0D ?? ?? ?? ?? 48 8B 01 FF 50 60";
-	uintptr_t      foundAddr = Memory::findPattern(rlModule, sig);
+	constexpr auto GMALLOC_SIG = "48 89 0D ?? ?? ?? ?? 48 8B 01 FF 50 60";
+	uintptr_t      foundAddr   = Memory::findPattern(rlModule, GMALLOC_SIG);
 	if (!foundAddr) {
 		LOGERROR("GMalloc wasn't found! Returning 0...");
 		return 0;
@@ -55,20 +55,29 @@ uintptr_t InstancesComponent::findGMallocAddress() {
 }
 
 bool InstancesComponent::initGlobals() {
-	uintptr_t gnamesAddr = findGNamesAddress();
-	if (!gnamesAddr) {
-		LOGERROR("Failed to find GNames address via pattern scan");
-		return false;
-	}
-	GNames   = reinterpret_cast<GNames_t>(gnamesAddr);
-	GObjects = reinterpret_cast<GObjects_t>(gnamesAddr + 0x48);
+	{
+		std::jthread gnamesThread([this]() {
+			uintptr_t gnamesAddr = findGNamesAddress();
+			if (!gnamesAddr) {
+				LOGERROR("Failed to find GNames address via pattern scan");
+				return;
+			}
+			GNames   = reinterpret_cast<GNames_t>(gnamesAddr);
+			GObjects = reinterpret_cast<GObjects_t>(gnamesAddr + 0x48);
+		});
 
-	uintptr_t gmallocAddr = findGMallocAddress();
-	if (!gmallocAddr) {
-		LOGERROR("Failed to find GMalloc address via pattern scan");
-		return false;
+		std::jthread gmallocThread([this]() {
+			uintptr_t gmallocAddr = findGMallocAddress();
+			if (!gmallocAddr) {
+				LOGERROR("Failed to find GMalloc address via pattern scan");
+				return;
+			}
+			GMalloc = gmallocAddr;
+		});
 	}
-	GMalloc = gmallocAddr;
+
+	if (!GNames || !GObjects)
+		return false;
 
 	return checkGlobals();
 }
