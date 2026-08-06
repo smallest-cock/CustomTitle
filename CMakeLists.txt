@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(CustomTitle VERSION 1.1.15)
+project(CustomTitle VERSION 1.1.16)
 
 set(CMAKE_CXX_STANDARD 20)
 
