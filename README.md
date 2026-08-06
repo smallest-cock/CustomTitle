@@ -35,7 +35,7 @@ You can use the following commands in the BakkesMod console (`F6`) or bind them 
 
 ## 🛠️ Building
 > [!NOTE]  
-> Building this plugin requires **64-bit Windows** and the **MSVC** toolchain
+> Building this plugin requires the **MSVC** toolchain
 > - Due to reliance on the Windows SDK and the need for ABI compatibility with Rocket League
 
 ### 1. Initialize Submodules
