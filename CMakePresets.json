@@ -46,12 +46,29 @@
                 "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/triplets",
                 "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
             }
+        },
+        {
+         "name": "linux-clang-cl",
+          "generator": "Ninja",
+          "binaryDir": "${sourceDir}/build/ninja/clang-cl-release",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+            "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/clang-cl-cross.cmake",
+            "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+            "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/triplets",
+            "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
+            "VCPKG_APPLOCAL_DEPS": "OFF"
+          }
         }
     ],
     "buildPresets": [
         {
             "name": "Ninja-Release",
             "configurePreset": "ninja-release"
+        },
+        {
+            "name": "Ninja-Release-Clang",
+            "configurePreset": "linux-clang-cl"
         }
     ]
 }

@@ -5,7 +5,7 @@
 #include <format>
 #include <memory>
 
-#include "bakkesmod/wrappers/CVarManagerWrapper.h"
+#include "bakkesmod/wrappers/cvarmanagerwrapper.h"
 
 #include "CustomFormatters.hpp"
 

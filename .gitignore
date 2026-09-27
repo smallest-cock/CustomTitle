@@ -6,3 +6,4 @@ plugins
 vcpkg_installed
 
 CMakeUserPresets.json
+post-build-linux.sh
