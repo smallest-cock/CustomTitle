@@ -1,3 +1,5 @@
 Diagnostics:
     Includes:
         IgnoreHeader: pch\.h
+CompileFlags:
+    CompilationDatabase: build/ninja/clang-cl-release
