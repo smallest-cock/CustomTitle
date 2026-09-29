@@ -167,7 +167,7 @@ void TitlesComponent::initHooks() {
 	*/
 
 	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_GetTitleData, [this](ActorWrapper Caller, void *Params, ...) {
-		if (!*m_enabled || !m_shouldOverwriteGetTitleDataReturnVal)
+		if (!*m_enabled || !m_shouldOverwriteGetTitleDataReturnVal || m_isSpawning.load())
 			return;
 
 		auto *caller = reinterpret_cast<UGFxData_PlayerTitles_TA *>(Caller.memory_address);
@@ -341,6 +341,7 @@ void TitlesComponent::initCvars() {
 				return;
 			}
 			spawnSelectedPreset();
+			applySelectedAppearanceToUser(); // HACK: 2026-09-28 manually call now, due to limitations added from the title spawn crash fix
 		});
 	});
 }
@@ -598,6 +599,12 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 }
 
 void TitlesComponent::spawnSelectedPreset(bool log) {
+	m_isSpawning.store(true);
+	struct ClearOnExit {
+		std::atomic<bool> &f;
+		~ClearOnExit() { f.store(false); }
+	} guard{m_isSpawning};
+
 	if (log) // for debugging weird thing where the spawned title doesnt match active preset
 	{
 		for (int i = 0; i < m_titlePresets.size(); ++i) {
@@ -899,6 +906,10 @@ void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearan
 }
 
 void TitlesComponent::applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow, bool log) {
+	// Early exit if a spawn is in flight, to prevent using state that's mid-mutation
+	if (m_isSpawning.load())
+		return;
+
 	if (!validUObject(gfxRow)) {
 		gfxRow = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
 		if (!validUObject(gfxRow))
@@ -1149,7 +1160,7 @@ void TitlesComponent::display_titlePresetInfo() {
 					_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
 			}
 			if (*m_enabled)
-				GUI::ToolTipFmt("Press OK at the spawn prompt. Pressing EQUIP NOW can cause buggy behavior.\n\n"
+				GUI::ToolTipFmt("Press OK after spawning. Pressing EQUIP NOW can cause buggy behavior.\n\n"
 				                "TIP - Bind this command to a key: %s",
 				    Commands::spawnCustomTitle.name);
 			else

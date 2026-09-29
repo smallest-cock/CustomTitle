@@ -136,9 +136,10 @@ private:
 	std::vector<GameTitleAppearance> m_gameTitles; // vector preserves the order that they were found in the title config
 	InGamePresetManager              m_ingamePresets;
 
-	bool        m_shouldOverwriteGetTitleDataReturnVal = false; // what a name
-	std::string m_selectedTitleIdStr;
-	FName       m_selectedTitleId;
+	bool              m_shouldOverwriteGetTitleDataReturnVal = false; // what a name
+	std::string       m_selectedTitleIdStr;
+	FName             m_selectedTitleId;
+	std::atomic<bool> m_isSpawning;
 
 private:
 	void            addNewPreset();
@@ -159,8 +160,9 @@ private:
 	bool spawn(const FName &spawn_id, bool animation = true, const std::string &spawn_msg = "");
 	bool spawn(const FString &spawn_id, bool animation = true, const std::string &spawn_msg = "");
 
+	void applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow = nullptr, bool log = false);
+
 	// static
-	static void applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow = nullptr, bool log = false);
 	static void applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title, bool log = false);
 
 	static FPlayerTitleData &getTitleFromConfig(int index, UTitleConfig_X *config = nullptr);
