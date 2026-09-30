@@ -86,7 +86,7 @@ void TitlesComponent::initHooks() {
 				if (!*m_enabled && sameId(pri->PlayerID, userId))
 					return;
 
-				GfxWrapper gfxPri{pri};
+				GfxWrapper gfxPri{ pri };
 				gfxPri.set_string(L"XPTitle", preset.getTextFStr());
 				gfxPri.set_int(L"TitleColor", rgbColor);
 				gfxPri.set_int(L"TitleGlowColor", rgbColor);
@@ -167,7 +167,7 @@ void TitlesComponent::initHooks() {
 	*/
 
 	hookWithCallerPost(Events::GFxData_PlayerTitles_TA_GetTitleData, [this](ActorWrapper Caller, void *Params, ...) {
-		if (!*m_enabled || !m_shouldOverwriteGetTitleDataReturnVal || m_isSpawning.load())
+		if (!*m_enabled || !m_shouldOverwriteGetTitleDataReturnVal)
 			return;
 
 		auto *caller = reinterpret_cast<UGFxData_PlayerTitles_TA *>(Caller.memory_address);
@@ -177,12 +177,6 @@ void TitlesComponent::initHooks() {
 		auto *params = reinterpret_cast<UGFxData_PlayerTitles_TA_execGetTitleData_Params *>(Params);
 		if (!params)
 			return;
-
-		/*
-		// debug
-		std::string titleId = params->TitleId.ToString();
-		LOG("(debug) GFxData_PlayerTitles_TA.GetTitleData(\"{}\") was called", titleId);
-		*/
 
 		if (params->TitleId != m_selectedTitleId)
 			return;
@@ -341,7 +335,6 @@ void TitlesComponent::initCvars() {
 				return;
 			}
 			spawnSelectedPreset();
-			applySelectedAppearanceToUser(); // HACK: 2026-09-28 manually call now, due to limitations added from the title spawn crash fix
 		});
 	});
 }
@@ -599,12 +592,6 @@ void TitlesComponent::applyPresetFromChatData(std::string data, const FChatMessa
 }
 
 void TitlesComponent::spawnSelectedPreset(bool log) {
-	m_isSpawning.store(true);
-	struct ClearOnExit {
-		std::atomic<bool> &f;
-		~ClearOnExit() { f.store(false); }
-	} guard{m_isSpawning};
-
 	if (log) // for debugging weird thing where the spawned title doesnt match active preset
 	{
 		for (int i = 0; i < m_titlePresets.size(); ++i) {
@@ -664,7 +651,7 @@ FName TitlesComponent::getCustomTitleId() {
 		return FName(-1);
 	}
 
-	FName name{id};
+	FName name{ id };
 
 	// if the FName we've added to the config is still there, use that
 	if (name != g_fnameCache.none.get(L"None") && config->GetTitleData(name).Id == name)
@@ -681,7 +668,7 @@ FName TitlesComponent::getCustomTitleId() {
 
 bool TitlesComponent::spawn(const FString &spawn_id, bool animation, const std::string &spawn_msg) {
 	TArray<FOnlineProductAttribute> attributes;
-	attributes.push_back({L"TitleId", spawn_id}); // "TitleId" FNameentryId is 41313
+	attributes.push_back({ L"TitleId", spawn_id }); // "TitleId" FNameentryId is 41313
 
 	LOG("animation: {}", animation);
 	if (!animation) {
@@ -703,7 +690,7 @@ bool TitlesComponent::spawn(const FString &spawn_id, bool animation, const std::
 }
 
 bool TitlesComponent::spawn(const FName &spawn_id, bool animation, const std::string &spawn_msg) {
-	FString fstr{spawn_id.GetDisplayNameEntry().GetWideName()};
+	FString fstr{ spawn_id.GetDisplayNameEntry().GetWideName() };
 	return spawn(fstr, animation, spawn_msg);
 }
 
@@ -717,7 +704,7 @@ bool TitlesComponent::spawn(const std::string &spawn_id, bool animation, const s
 // ##############################################################################################################
 
 void TitlesComponent::addNewPreset() {
-	FColor white{255, 255, 255, 255};
+	FColor white{ 255, 255, 255, 255 };
 	m_titlePresets.emplace_back(std::format("{{legend}} title preset {} {{diamond}}", m_titlePresets.size() + 1), white, white);
 	m_activePresetIndex = m_titlePresets.size() - 1;
 	applySelectedAppearanceToUser();
@@ -896,7 +883,7 @@ void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearan
 	if (!validUObject(pri))
 		return;
 
-	GfxWrapper gfxPri{pri};
+	GfxWrapper gfxPri{ pri };
 	gfxPri.set_string(L"XPTitle", title.getTextFStr());
 	gfxPri.set_int(L"TitleColor", title.getIntTextColor());
 	gfxPri.set_int(L"TitleGlowColor", title.getIntGlowColor());
@@ -906,29 +893,34 @@ void TitlesComponent::applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearan
 }
 
 void TitlesComponent::applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow, bool log) {
-	// Early exit if a spawn is in flight, to prevent using state that's mid-mutation
-	if (m_isSpawning.load())
-		return;
-
 	if (!validUObject(gfxRow)) {
 		gfxRow = Instances.getInstanceOf<UGFxData_PlayerTitles_TA>();
+
+		LOGWARNING("New gfxRow={}", (void *)gfxRow);
 		if (!validUObject(gfxRow))
 			return;
 	}
 
-	GfxWrapper gfx{gfxRow};
+	GfxWrapper gfx{ gfxRow };
 	auto      *ds = gfx.get_datastore();
 	if (!validUObject(ds))
 		return;
 
-	int32_t row = ds->GetValue(L"PlayerTitles", NULL, L"SelectedTitle").I; // selected title index is the row index
+	auto *pt{ UnrealCast<UGFxData_PlayerTitles_TA>(gfxRow) };
+	if (!pt) {
+		LOGERROR("pt is null");
+		return;
+	}
+	int32_t row = pt->SelectedTitle;
 	// ... or:
-	// int32_t row = pt->SelectedTitle;
-	FName table{L"PlayerTitlesPlayerTitles"};
+	// FName   tableGet{L"PlayerTitles"};
+	// FName   col{L"SelectedTitle"};
+	// int32_t row = ds->GetValue(tableGet, NULL, col).I; // selected title index is the row index
 
-	ds->SetStringValue(table, row, L"Text", title.getTextFStr());
-	ds->SetIntValue(table, row, L"Color", title.getIntTextColor());
-	ds->SetIntValue(table, row, L"GlowColor", title.getIntGlowColor());
+	FName tableSet{ L"PlayerTitlesPlayerTitles" };
+	ds->SetStringValue(tableSet, row, L"Text", title.getTextFStr());
+	ds->SetIntValue(tableSet, row, L"Color", title.getIntTextColor());
+	ds->SetIntValue(tableSet, row, L"GlowColor", title.getIntGlowColor());
 
 	if (log)
 		LOG("Applied title preset to banner");
@@ -955,7 +947,7 @@ void TitlesComponent::sendTitleDataChat(const TitleAppearance &appearance, APlay
 
 void TitlesComponent::display_titlePresetList() {
 	{
-		GUI::ScopedChild c{"List", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.9f)};
+		GUI::ScopedChild c{ "List", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.9f) };
 
 		ImGui::TextUnformatted("Presets:");
 		ImGui::Separator();
@@ -964,7 +956,7 @@ void TitlesComponent::display_titlePresetList() {
 		for (int i = 0; i < titleCustomizationsSize; ++i) {
 			auto &appearancePreset = m_titlePresets[i];
 
-			GUI::ScopedID id{&appearancePreset};
+			GUI::ScopedID id{ &appearancePreset };
 
 			ImVec4 textCol = appearancePreset.getImGuiTextColor();
 			textCol.w      = 1.0f; // set alpha channel to 1 when rendering menu so title is always visible
@@ -986,7 +978,7 @@ void TitlesComponent::display_titlePresetList() {
 	GUI::Spacing(2);
 
 	{
-		GUI::ScopedChild c{"AddPreset"};
+		GUI::ScopedChild c{ "AddPreset" };
 
 		if (ImGui::Button("Add New Preset", ImGui::GetContentRegionAvail())) {
 			GAME_THREAD_EXECUTE({
@@ -1005,7 +997,7 @@ void TitlesComponent::display_titlePresetInfo() {
 	static ImGuiColorEditFlags noEditFlags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoInputs;
 
 	{
-		GUI::ScopedChild c{"PrestInfo", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.8f)};
+		GUI::ScopedChild c{ "PrestInfo", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.8f) };
 
 		if (!m_selectedTitleIdStr.empty()) {
 			if (*m_showEquippedTitleDetails) {
@@ -1021,10 +1013,26 @@ void TitlesComponent::display_titlePresetInfo() {
 						GUI::SameLineSpacing_absolute(spacing);
 						ImGui::Text("%s", m_currentOgAppearance.getText().c_str());
 
+						ImGui::TextColored(GUI::Colors::LightGreen, "SortPriority:");
+						GUI::SameLineSpacing_absolute(spacing);
+						ImGui::Text("%d", m_currentOgAppearance.getSortPriority());
+
+						ImGui::TextColored(GUI::Colors::LightGreen, "MarkupFragment:");
+						GUI::SameLineSpacing_absolute(spacing);
+						ImGui::Text("%s", m_currentOgAppearance.getMarkupFragment().c_str());
+
+						ImGui::TextColored(GUI::Colors::LightGreen, "IconTexture:");
+						GUI::SameLineSpacing_absolute(spacing);
+						ImGui::Text("%s", m_currentOgAppearance.getIconTexture().c_str());
+
+						ImGui::TextColored(GUI::Colors::LightGreen, "StatName:");
+						GUI::SameLineSpacing_absolute(spacing);
+						ImGui::Text("%s", m_currentOgAppearance.getStatName().c_str());
+
 						ImGui::TextColored(GUI::Colors::LightGreen, "Color:");
 						GUI::SameLineSpacing_absolute(spacing);
 
-						float color[4] = {0, 0, 0, 0};
+						float color[4] = { 0, 0, 0, 0 };
 						if (m_currentOgAppearance.isSameTextAndGlowColor()) {
 							m_currentOgAppearance.getTextColor(color);
 							ImGui::ColorEdit4("##singleColor", &color[0], noEditFlags);
@@ -1034,7 +1042,7 @@ void TitlesComponent::display_titlePresetInfo() {
 
 							GUI::SameLineSpacing_relative(30.0f);
 
-							float glowColor[4] = {0, 0, 0, 0};
+							float glowColor[4] = { 0, 0, 0, 0 };
 							m_currentOgAppearance.getGlowColor(color);
 							ImGui::ColorEdit4("Glow", &color[0], noEditFlags);
 						}
@@ -1098,7 +1106,7 @@ void TitlesComponent::display_titlePresetInfo() {
 			GUI::Spacing(2);
 
 			if (appearance.isSameTextAndGlowColor()) {
-				float color[4] = {0, 0, 0, 0};
+				float color[4] = { 0, 0, 0, 0 };
 				appearance.getTextColor(color);
 
 				if (ImGui::ColorEdit4("Color", &color[0], colorEditFlags)) {
@@ -1109,7 +1117,7 @@ void TitlesComponent::display_titlePresetInfo() {
 				}
 			} else {
 				// text color picker
-				float textCol[4] = {0, 0, 0, 0};
+				float textCol[4] = { 0, 0, 0, 0 };
 				appearance.getTextColor(textCol);
 
 				if (ImGui::ColorEdit4("Text color", &textCol[0], colorEditFlags)) {
@@ -1120,7 +1128,7 @@ void TitlesComponent::display_titlePresetInfo() {
 				GUI::Spacing(2);
 
 				// glow color picker
-				float glowCol[4] = {0, 0, 0, 0};
+				float glowCol[4] = { 0, 0, 0, 0 };
 				appearance.getGlowColor(glowCol);
 
 				if (ImGui::ColorEdit4("Glow color", &glowCol[0], colorEditFlags)) {
@@ -1149,12 +1157,12 @@ void TitlesComponent::display_titlePresetInfo() {
 	GUI::Spacing(2);
 
 	{
-		GUI::ScopedChild c{"ButtonsSection"};
+		GUI::ScopedChild c{ "ButtonsSection" };
 
 		{
-			GUI::ScopedChild c{"SpawnButton", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.5f)};
+			GUI::ScopedChild c{ "SpawnButton", ImVec2(0, ImGui::GetContentRegionAvail().y * 0.5f) };
 			{
-				GUI::ScopedDisabled disablility{m_enabled};
+				GUI::ScopedDisabled disablility{ m_enabled };
 
 				if (ImGui::Button("Spawn", ImGui::GetContentRegionAvail()))
 					_globalCvarManager->executeCommand(Commands::spawnCustomTitle.name);
@@ -1168,10 +1176,10 @@ void TitlesComponent::display_titlePresetInfo() {
 		}
 
 		{
-			GUI::ScopedChild c{"SaveOrDelete"};
+			GUI::ScopedChild c{ "SaveOrDelete" };
 
 			{
-				GUI::ScopedChild c{"SaveButton", ImVec2(ImGui::GetContentRegionAvailWidth() * 0.75f, 0)};
+				GUI::ScopedChild c{ "SaveButton", ImVec2(ImGui::GetContentRegionAvailWidth() * 0.75f, 0) };
 
 				if (ImGui::Button("Save", ImGui::GetContentRegionAvail())) {
 					GAME_THREAD_EXECUTE({ writePresetsToJson(); });
@@ -1181,7 +1189,7 @@ void TitlesComponent::display_titlePresetInfo() {
 			ImGui::SameLine();
 
 			{
-				GUI::ScopedChild c{"DeleteButton", ImGui::GetContentRegionAvail()};
+				GUI::ScopedChild c{ "DeleteButton", ImGui::GetContentRegionAvail() };
 
 				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.0f, 0.6f, 0.6f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0f, 0.7f, 0.7f));
@@ -1214,7 +1222,7 @@ void TitlesComponent::display_gameTitlesDropdown() {
 		std::string searchQuery = Format::ToLower(searchBuffer); // convert search text to lower
 
 		for (const auto &title : m_gameTitles) {
-			GUI::ScopedID id{&title};
+			GUI::ScopedID id{ &title };
 
 			const std::string &titleText      = title.getText();
 			const std::string  titleTextLower = Format::ToLower(title.getText());
@@ -1283,10 +1291,32 @@ void TitleAppearance::clear() {
 	m_glowColor = {};
 }
 
+// clang-format off
+// // ScriptStruct ProjectX._Types_X.PlayerTitleData
+// // Size: 0x0058
+// struct FPlayerTitleData
+// {
+// 	class FName                                        Id;                                            // 0x0000 (0x0008) [0x0000000040000000] (CPF_DataBinding)
+// 	class FString                                      Text;                                          // 0x0008 (0x0010) [0x0000000040400000] (CPF_NeedCtorLink | CPF_DataBinding)
+// 	class FName                                        Category;                                      // 0x0018 (0x0008) [0x0000000000000000]               
+// 	int32_t                                            SortPriority;                                  // 0x0020 (0x0004) [0x0000000000000000]               
+// 	struct FColor                                      Color;                                         // 0x0024 (0x0004) [0x0000000040000000] (CPF_DataBinding)
+// 	struct FColor                                      GlowColor;                                     // 0x0028 (0x0004) [0x0000000040000000] (CPF_DataBinding)
+// 	uint8_t                                          UnknownData00[0x4];                            // 0x002C (0x0004) MISSED OFFSET
+// 	class FString                                      MarkupFragment;                                // 0x0030 (0x0010) [0x0001000040400000] (CPF_NeedCtorLink | CPF_DataBinding)
+// 	class FString                                      IconTexture;                                   // 0x0040 (0x0010) [0x0001000040400000] (CPF_NeedCtorLink | CPF_DataBinding)
+// 	class FName                                        StatName;                                      // 0x0050 (0x0008) [0x0001000000000000]               
+// };
+// clang-format on
 void TitleAppearance::updateFromPlayerTitleData(const FPlayerTitleData &data) {
-	m_text                 = data.Text.ToString();
-	m_textColor            = data.Color;
-	m_glowColor            = data.GlowColor;
+	m_text           = data.Text.ToString();
+	m_textColor      = data.Color;
+	m_glowColor      = data.GlowColor;
+	m_sortPriority   = data.SortPriority;
+	m_markupFragment = data.MarkupFragment.ToString();
+	m_iconTexture    = data.IconTexture.ToString();
+	m_statName       = data.StatName.ToString();
+
 	m_sameTextAndGlowColor = (m_textColor.R == m_glowColor.R) && (m_textColor.G == m_glowColor.G) && (m_textColor.B == m_glowColor.B) &&
 	                         (m_textColor.A == m_glowColor.A);
 }
@@ -1302,7 +1332,7 @@ std::optional<TitleAppearance> TitleAppearance::fromEncodedStr(const std::string
 	if (parts.size() != 3 && parts.size() != 4)
 		return std::nullopt; // invalid format
 
-	TitleAppearance appearance;
+	TitleAppearance appearance{};
 	appearance.setText(parts[0]);
 	auto textColorOpt = Colors::hexToFColor(parts[1]);
 	if (!textColorOpt) {
@@ -1333,13 +1363,34 @@ std::optional<TitleAppearance> TitleAppearance::fromEncodedStr(const std::string
 	return appearance;
 }
 
+// clang-format off
+// // ScriptStruct ProjectX._Types_X.PlayerTitleData
+// // Size: 0x0058
+// struct FPlayerTitleData
+// {
+// 	class FName                                        Id;                                            // 0x0000 (0x0008) [0x0000000040000000] (CPF_DataBinding)
+// 	class FString                                      Text;                                          // 0x0008 (0x0010) [0x0000000040400000] (CPF_NeedCtorLink | CPF_DataBinding)
+// 	class FName                                        Category;                                      // 0x0018 (0x0008) [0x0000000000000000]               
+// 	int32_t                                            SortPriority;                                  // 0x0020 (0x0004) [0x0000000000000000]               
+// 	struct FColor                                      Color;                                         // 0x0024 (0x0004) [0x0000000040000000] (CPF_DataBinding)
+// 	struct FColor                                      GlowColor;                                     // 0x0028 (0x0004) [0x0000000040000000] (CPF_DataBinding)
+// 	uint8_t                                          UnknownData00[0x4];                            // 0x002C (0x0004) MISSED OFFSET
+// 	class FString                                      MarkupFragment;                                // 0x0030 (0x0010) [0x0001000040400000] (CPF_NeedCtorLink | CPF_DataBinding)
+// 	class FString                                      IconTexture;                                   // 0x0040 (0x0010) [0x0001000040400000] (CPF_NeedCtorLink | CPF_DataBinding)
+// 	class FName                                        StatName;                                      // 0x0050 (0x0008) [0x0001000000000000]               
+// };
+// clang-format on
 FPlayerTitleData TitleAppearance::toTitleData(const FName &id) const {
 	FPlayerTitleData data{};
-	data.Text      = getTextFStr();
-	data.Id        = id;
-	data.Category  = g_fnameCache.none.get(L"None");
-	data.Color     = getTextFColor();
-	data.GlowColor = getGlowFColor();
+	data.Id             = id;
+	data.Text           = getTextFStr();
+	data.Category       = g_fnameCache.none.get(L"None");
+	data.SortPriority   = m_sortPriority;
+	data.Color          = getTextFColor();
+	data.GlowColor      = getGlowFColor();
+	data.MarkupFragment = FString::create("");
+	data.IconTexture    = FString::create("");
+	data.StatName       = g_fnameCache.none.get(L"None");
 	return data;
 }
 
@@ -1358,11 +1409,11 @@ void TitleAppearance::getGlowColor(float (&outArray)[4]) const {
 }
 
 ImVec4 TitleAppearance::getImGuiTextColor() const {
-	return {m_textColor.R / 255.0f, m_textColor.G / 255.0f, m_textColor.B / 255.0f, m_textColor.A / 255.0f};
+	return { m_textColor.R / 255.0f, m_textColor.G / 255.0f, m_textColor.B / 255.0f, m_textColor.A / 255.0f };
 }
 
 ImVec4 TitleAppearance::getImGuiGlowColor() const {
-	return {m_glowColor.R / 255.0f, m_glowColor.G / 255.0f, m_glowColor.B / 255.0f, m_glowColor.A / 255.0f};
+	return { m_glowColor.R / 255.0f, m_glowColor.G / 255.0f, m_glowColor.B / 255.0f, m_glowColor.A / 255.0f };
 }
 
 int32_t TitleAppearance::getIntTextColor() const {

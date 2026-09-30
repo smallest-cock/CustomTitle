@@ -11,11 +11,16 @@ struct FNameCache {
 extern FNameCache g_fnameCache;
 
 class TitleAppearance {
-	std::string m_text                 = "{legend} {grandchampion} example {gold} {champion}";
-	FColor      m_textColor            = {255, 255, 255, 255};
-	FColor      m_glowColor            = {255, 255, 255, 255};
-	bool        m_sameTextAndGlowColor = true;
-	bool        m_useRGB               = false;
+	std::string m_text      = "{legend} {grandchampion} example {gold} {champion}";
+	FColor      m_textColor = { 255, 255, 255, 255 }; // white
+	FColor      m_glowColor = { 255, 255, 255, 255 }; // white
+	int32_t     m_sortPriority{};
+	std::string m_markupFragment;
+	std::string m_iconTexture;
+	std::string m_statName = "None";
+
+	bool m_sameTextAndGlowColor = true;
+	bool m_useRGB               = false;
 
 public:
 	TitleAppearance() {}
@@ -30,18 +35,26 @@ public:
 	// Getters
 	std::string getText() const { return m_text; }
 	FString     getTextFStr() const { return FString::create(m_text); }
-	FColor      getTextFColor() const { return m_textColor; }
-	FColor      getGlowFColor() const { return m_glowColor; }
-	void        getTextColor(float (&outArray)[4]) const;
-	void        getGlowColor(float (&outArray)[4]) const;
-	ImVec4      getImGuiTextColor() const;
-	ImVec4      getImGuiGlowColor() const;
-	int32_t     getIntTextColor() const;
-	int32_t     getIntGlowColor() const;
-	bool       *getUseRGBPtr() { return &m_useRGB; }
-	bool       *getSameTextAndGlowColorPtr() { return &m_sameTextAndGlowColor; }
-	bool        usesRGB() const { return m_useRGB; }
-	bool        isSameTextAndGlowColor() const { return m_sameTextAndGlowColor; }
+	std::string getMarkupFragment() const { return m_markupFragment; }
+	FString     getMarkupFragmentFStr() const { return FString::create(m_markupFragment); }
+	std::string getIconTexture() const { return m_iconTexture; }
+	FString     getIconTextureFStr() const { return FString::create(m_iconTexture); }
+	std::string getStatName() const { return m_statName; }
+	FName       getStatNameFName() const { return FName::find(m_statName); }
+	int32_t     getSortPriority() const { return m_sortPriority; }
+
+	FColor  getTextFColor() const { return m_textColor; }
+	FColor  getGlowFColor() const { return m_glowColor; }
+	void    getTextColor(float (&outArray)[4]) const;
+	void    getGlowColor(float (&outArray)[4]) const;
+	ImVec4  getImGuiTextColor() const;
+	ImVec4  getImGuiGlowColor() const;
+	int32_t getIntTextColor() const;
+	int32_t getIntGlowColor() const;
+	bool   *getUseRGBPtr() { return &m_useRGB; }
+	bool   *getSameTextAndGlowColorPtr() { return &m_sameTextAndGlowColor; }
+	bool    usesRGB() const { return m_useRGB; }
+	bool    isSameTextAndGlowColor() const { return m_sameTextAndGlowColor; }
 
 	// Setters
 	void setText(const std::string &str) { m_text = str; }
@@ -136,10 +149,9 @@ private:
 	std::vector<GameTitleAppearance> m_gameTitles; // vector preserves the order that they were found in the title config
 	InGamePresetManager              m_ingamePresets;
 
-	bool              m_shouldOverwriteGetTitleDataReturnVal = false; // what a name
-	std::string       m_selectedTitleIdStr;
-	FName             m_selectedTitleId;
-	std::atomic<bool> m_isSpawning;
+	bool        m_shouldOverwriteGetTitleDataReturnVal = false; // what a name
+	std::string m_selectedTitleIdStr;
+	FName       m_selectedTitleId;
 
 private:
 	void            addNewPreset();
@@ -160,9 +172,8 @@ private:
 	bool spawn(const FName &spawn_id, bool animation = true, const std::string &spawn_msg = "");
 	bool spawn(const FString &spawn_id, bool animation = true, const std::string &spawn_msg = "");
 
-	void applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow = nullptr, bool log = false);
-
 	// static
+	static void applyPresetToBanner(const TitleAppearance &title, UGFxDataRow_X *gfxRow = nullptr, bool log = false);
 	static void applyPresetToPri(UGFxData_PRI_TA *pri, const TitleAppearance &title, bool log = false);
 
 	static FPlayerTitleData &getTitleFromConfig(int index, UTitleConfig_X *config = nullptr);
