@@ -1,5 +1,9 @@
 # Changelog
 
+
+## v1.1.18
+- Fixed game crashes
+
 ## v1.1.17
 - Fixed game crash when spawning a title
 - Updated internal SDK to match latest RL version (v2.76)
