@@ -906,16 +906,16 @@ void TitlesComponent::applyPresetToBanner(const TitleAppearance &title, UGFxData
 	if (!validUObject(ds))
 		return;
 
-	auto *pt{ UnrealCast<UGFxData_PlayerTitles_TA>(gfxRow) };
-	if (!pt) {
-		LOGERROR("pt is null");
-		return;
-	}
-	int32_t row = pt->SelectedTitle;
+	int32_t row = ds->GetValue(L"PlayerTitles", NULL, L"SelectedTitle").I; // selected title index is the row index
+
 	// ... or:
-	// FName   tableGet{L"PlayerTitles"};
-	// FName   col{L"SelectedTitle"};
-	// int32_t row = ds->GetValue(tableGet, NULL, col).I; // selected title index is the row index
+	// // BUG: this is alternative method of getting the SelectedTitle row index breaks RGB on the banner for some reason
+	// auto *pt{ UnrealCast<UGFxData_PlayerTitles_TA>(gfxRow) };
+	// if (!pt) {
+	// 	LOGERROR("pt is null");
+	// 	return;
+	// }
+	// int32_t row = pt->SelectedTitle;
 
 	FName tableSet{ L"PlayerTitlesPlayerTitles" };
 	ds->SetStringValue(tableSet, row, L"Text", title.getTextFStr());
