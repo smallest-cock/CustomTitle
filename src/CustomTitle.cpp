@@ -17,7 +17,7 @@ void CustomTitle::onLoad() {
 
 	pluginInit();
 
-	LOG(PLUGIN_NAME " loaded!");
+	LOG(PLUGIN_NAME " hath loaded!");
 }
 
 void CustomTitle::onUnload() {
@@ -35,7 +35,7 @@ void CustomTitle::pluginInit() {
 	initCommands();
 	initHooks();
 
-	Format::construct_label({41, 11, 20, 6, 8, 13, 52, 12, 0, 3, 4, 52, 1, 24, 52, 44, 44, 37, 14, 22}, h_label); // o b f u s a c i o n
+	Format::construct_label({ 41, 11, 20, 6, 8, 13, 52, 12, 0, 3, 4, 52, 1, 24, 52, 44, 44, 37, 14, 22 }, h_label); // o b f u s a c i o n
 	PluginUpdates::checkForUpdates(PLUGIN_NAME_NO_SPACES, VERSION_STR);
 
 	Dx11Data::InitializeKiero();

@@ -1,6 +1,9 @@
 # Changelog
 
 
+## v1.1.19
+- Updated internal SDK to match latest RL version (v2.78)
+
 ## v1.1.18
 - Fixed game crashes
 
